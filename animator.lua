@@ -6,8 +6,8 @@ local state = {held = nil}
 local sequencers = {}
 local mainClock = metro.init()
 local MusicUtil = require "musicutil"
-
-engine.name = 'PolyPerc'
+local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
+engine.name = "MollyThePoly"
 
 function findPosition(x, y)
   return GRID_LENGTH * (y - 1) + x
@@ -85,6 +85,12 @@ end
 local notes = mapGridNotes()
 
 function init()
+  params:add_number('tempo', 'tempo', 20, 999, 120)
+  params:set_action('tempo', function(v) mainClock.time = 60 / v end)
+  MollyThePoly.add_params()
+  params:set('env_2_decay', 0.1)
+  params:set('env_2_sustain', 0)
+  params:set('env_2_release', 0.1)
   math.randomseed(os.time())
   g.key = gridKey
   mainClock.event = count
@@ -110,7 +116,8 @@ function count()
   for pos,seqs in pairs(play) do
     local note = notes[pos]
     if #seqs > 1 then note = note + 12 end
-    engine.hz(MusicUtil.note_num_to_freq(note))
+    engine.noteOn(note, MusicUtil.note_num_to_freq(note), 1)
+--    engine.hz(MusicUtil.note_num_to_freq(note))
   end
   gridDraw()
 end
