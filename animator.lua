@@ -88,9 +88,12 @@ function init()
   params:add_number('tempo', 'tempo', 20, 999, 120)
   params:set_action('tempo', function(v) mainClock.time = 60 / v end)
   MollyThePoly.add_params()
-  params:set('env_2_decay', 0.1)
+  params:set('env_2_decay', 0.2)
   params:set('env_2_sustain', 0)
   params:set('env_2_release', 0.1)
+  params:set('osc_wave_shape', 1)
+  params:set('noise_level', 0)
+  params:set('chorus_mix', 0)
   math.randomseed(os.time())
   g.key = gridKey
   mainClock.event = count
