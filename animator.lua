@@ -1,7 +1,7 @@
 local GRID_HEIGHT, GRID_LENGTH = 8, 16
 local MUTE, OCTAVE, RESET, RESET_GLOBAL, REVERSE, REPEL = 'mute', 'octave', 'reset', 'reset_global', 'reverse', 'repel'
 local g = grid.connect()
-local GRID_LEVELS = {DIM = 3, LOW_MED = 5, MED = 8, HIGH = 12}
+local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 7, HIGH = 14}
 local state = {held = nil}
 local sequencers = {}
 local mainClock = metro.init()
@@ -52,15 +52,10 @@ function Sequencer.new(steps)
     xRateCount = 1,
     yRate = 0,
     yRateCount = 1,
-    metro = metro.init()
   }
   setmetatable(seq, Sequencer)
   setmetatable(seq, {__index = Sequencer})
   return seq
-end
-
-function Sequencer:createMetroEvent()
-  return function() end
 end
 
 function mapGridNotes()
@@ -85,6 +80,15 @@ end
 local notes = mapGridNotes()
 
 function init()
+  initParams()
+  math.randomseed(os.time())
+  g.key = gridKey
+  mainClock.event = count
+  mainClock:start()
+  redraw()
+end
+
+function initParams()
   params:add_number('tempo', 'tempo', 20, 999, 120)
   params:set_action('tempo', function(v) mainClock.time = 60 / v end)
   MollyThePoly.add_params()
@@ -94,11 +98,6 @@ function init()
   params:set('osc_wave_shape', 1)
   params:set('noise_level', 0)
   params:set('chorus_mix', 0)
-  math.randomseed(os.time())
-  g.key = gridKey
-  mainClock.event = count
-  mainClock:start()
-  redraw()
 end
 
 function count()
@@ -120,18 +119,21 @@ function count()
     local note = notes[pos]
     if #seqs > 1 then note = note + 12 end
     engine.noteOn(note, MusicUtil.note_num_to_freq(note), 1)
---    engine.hz(MusicUtil.note_num_to_freq(note))
   end
   gridDraw()
+  redraw()
 end
 
 function redraw()
   screen.clear()
-  screen.text('ANIMATOR')
+  screen.aa(1)
+  screenDrawSteps()
+  screen.fill()
   screen.update()
 end
 
 function key(n, z) end
+
 function enc(n, delta) end
 
 function gridKey(x, y, z)
@@ -145,9 +147,11 @@ end
 function handleGridKeyDown(x, y)
   if state.held ~= nil then
     local steps = getNewLineSteps(state.held, {x = x, y = y})
-    table.insert(sequencers, Sequencer.new(steps))
-    updateStepState(steps)
-    state.held = {x = x, y = y}
+    if steps ~= nil then
+      table.insert(sequencers, Sequencer.new(steps))
+      updateStepState(steps)
+      state.held = {x = x, y = y}
+    end
   else
     if on[findPosition(x, y)] == 1 then
       on[findPosition(x, y)] = 0
@@ -157,41 +161,62 @@ function handleGridKeyDown(x, y)
     state.held = {x = x, y = y}
   end
   gridDraw()
+  redraw()
+  screen.clear()
 end
 
-function gridDraw()
+function getStepLevels()
   local steps = {}
 
   for _,seq in ipairs(sequencers) do
     local active = seq.steps[seq.index]
     local activePos = findPosition(active.x, active.y)
-    if steps[activePos] == nil then steps[activePos] = {} end
-    table.insert(steps[activePos], GRID_LEVELS.LOW_MED)
+    steps[activePos] = steps[activePos] == nil
+      and GRID_LEVELS.LOW_MED
+      or math.max(steps[activePos], GRID_LEVELS.LOW_MED)
 
     for i,step in ipairs(seq.steps) do
       if i ~= seq.index then
         local inactivePos = findPosition(step.x, step.y)
-        if steps[inactivePos] == nil then steps[inactivePos] = {} end
-        table.insert(steps[inactivePos], GRID_LEVELS.DIM)
+        steps[inactivePos] = steps[inactivePos] == nil
+          and GRID_LEVELS.DIM
+          or math.max(steps[inactivePos], GRID_LEVELS.DIM)
       end
 
       local enabledPos = findPosition(step.x, step.y)
       local isOn = on[enabledPos] == 1
 
       if isOn then
-        if steps[enabledPos] == nil then steps[enabledPos] = {} end
         if i == seq.index then
-          table.insert(steps[enabledPos], GRID_LEVELS.HIGH)
+          steps[enabledPos] = GRID_LEVELS.HIGH
         else
-          table.insert(steps[enabledPos], GRID_LEVELS.MED)
+          steps[enabledPos] = steps[enabledPos] == nil
+            and GRID_LEVELS.MED
+            or math.max(steps[enabledPos], GRID_LEVELS.MED)
         end
       end
     end
   end
 
-  for pos,levels in pairs(steps) do
+  return steps
+end
+
+function screenDrawSteps()
+  for pos,level in pairs(getStepLevels()) do
     local step = findXY(pos)
-    g:led(step.x, step.y, math.max(table.unpack(levels)))
+    local padding = 5
+    screen.level(level)
+    screen.rect(step.x+(padding*step.x) - padding, step.y+(padding*step.y) - padding, 3, 3)
+    screen.fill()
+    screen.stroke()
+    screen.update()
+  end
+end
+
+function gridDraw()
+  for pos,level in pairs(getStepLevels()) do
+    local step = findXY(pos)
+    g:led(step.x, step.y, level)
   end
   g:refresh()
 end
