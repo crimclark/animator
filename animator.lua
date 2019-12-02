@@ -17,8 +17,6 @@ function findXY(pos)
   return {x = (pos - 1) % GRID_LENGTH + 1, y = math.ceil(pos/GRID_LENGTH)}
 end
 
-local on = {}
-
 function initStepState()
   local steps = {}
   -- for checking can step be activated ie steps[128] = 1
@@ -26,6 +24,7 @@ function initStepState()
   return steps
 end
 
+local on = initStepState()
 local stepState = initStepState()
 
 local Sequencer = {}
@@ -62,7 +61,7 @@ function mapGridNotes()
       notes[pos] = intervals[pointer+j]
       pos = pos + 1
     end
-    startPos = startPos - 16
+    startPos = startPos - GRID_LENGTH
     pos = startPos
     pointer = pointer + 3
   end
@@ -98,7 +97,7 @@ function count()
     seq.index = seq.index % seq.length + 1
     local currentStep = seq.steps[seq.index]
     local pos = findPosition(currentStep.x, currentStep.y)
-    if on[pos] == 1 then
+    if on[pos] > 0 then
       if play[pos] == nil then
         play[pos] = {seq.ID}
       else
@@ -138,17 +137,33 @@ end
 
 function handleGridKeyDown(x, y)
   if state.held ~= nil then
+    for i=1,#sequencers do
+      local ln = sequencers[i].length
+      local steps = sequencers[i].steps
+      if (state.held.x == steps[1].x and state.held.y == steps[1].y and x == steps[ln].x and y == steps[ln].y)
+        or (state.held.x == steps[ln].x and state.held.y == steps[ln].y and x == steps[1].x and y == steps[1].y) then
+        clearSeq(i)
+        gridDraw()
+        redraw()
+        screen.clear()
+        return
+      end
+    end
+
     local steps = getNewLineSteps(state.held, {x = x, y = y})
     if steps ~= nil then
       table.insert(sequencers, Sequencer.new(steps))
       updateStepState(steps)
+      updateOnState(steps)
       state.held = {x = x, y = y}
     end
   else
-    if on[findPosition(x, y)] == 1 then
-      on[findPosition(x, y)] = 0
-    elseif stepState[findPosition(x, y)] == 1 then
-      on[findPosition(x, y)] = 1
+    local pos = findPosition(x, y)
+    if on[pos] > 0 then
+      on[pos] = 0
+    elseif stepState[pos] > 0 then
+      -- set on to same number of enabled at position
+      on[pos] = stepState[pos]
     end
     state.held = {x = x, y = y}
   end
@@ -157,13 +172,20 @@ function handleGridKeyDown(x, y)
   screen.clear()
 end
 
+function clearSeq(index)
+  -- todo: step state needs to be aware of overlapping seqeuences
+  clearStepState(sequencers[index].steps)
+  clearOnState(sequencers[index].steps)
+  table.remove(sequencers, index)
+end
+
 function getStepLevels()
   local steps = {}
   for _,seq in ipairs(sequencers) do
     for i,step in ipairs(seq.steps) do
       local pos = findPosition(step.x, step.y)
       -- step activated
-      if on[pos] == 1 then
+      if on[pos] > 0 then
         if i == seq.index then
           steps[pos] = GRID_LEVELS.HIGH
         else
@@ -200,6 +222,7 @@ function screenDrawSteps()
 end
 
 function gridDraw()
+  g:all(0)
   for pos,level in pairs(getStepLevels()) do
     local step = findXY(pos)
     g:led(step.x, step.y, level)
@@ -209,7 +232,33 @@ end
 
 function updateStepState(steps)
   for _,step in ipairs(steps) do
-    stepState[findPosition(step.x, step.y)] = 1
+    local pos = findPosition(step.x, step.y)
+    stepState[pos] = stepState[pos] + 1
+  end
+end
+
+function updateOnState(steps)
+  for _,step in ipairs(steps) do
+    local pos = findPosition(step.x, step.y)
+    if on[pos] > 0 then
+      on[pos] = on[pos] + 1
+    end
+  end
+end
+
+function clearStepState(steps)
+  for _,step in ipairs(steps) do
+    local pos = findPosition(step.x, step.y)
+    stepState[pos] = stepState[pos] - 1
+  end
+end
+
+function clearOnState(steps)
+  for _,step in ipairs(steps) do
+    local pos = findPosition(step.x, step.y)
+    if on[pos] > 0 then
+      on[pos] = on[pos] - 1
+    end
   end
 end
 
