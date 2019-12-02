@@ -1,5 +1,5 @@
 local GRID_HEIGHT, GRID_LENGTH = 8, 16
-local MUTE, OCTAVE, RESET, RESET_GLOBAL, REVERSE, REPEL = 'mute', 'octave', 'reset', 'reset_global', 'reverse', 'repel'
+local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
 local g = grid.connect()
 local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 7, HIGH = 14}
 local state = {held = nil}
@@ -16,14 +16,6 @@ end
 function findXY(pos)
   return {x = (pos - 1) % GRID_LENGTH + 1, y = math.ceil(pos/GRID_LENGTH)}
 end
-
--- function initOnMap()
---   local on = {}
---   for i=1,GRID_HEIGHT*GRID_LENGTH do on[i] = {} end
---   return on
--- end
--- -- for checking intersect
--- local on = initOnMap()
 
 local on = {}
 
@@ -45,7 +37,7 @@ function Sequencer.new(steps)
     steps = steps, -- steps store positions on both axes
     index = 1, -- current step
     length = #steps,
-    intersect = {MUTE, OCTAVE, REVERSE, REPEL, RESET, RESET_GLOBAL},
+    intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
     div = 1,
     divCount = 1,
     xRate = 0, -- if ~= 0, move to right/left every xRate steps
@@ -167,37 +159,31 @@ end
 
 function getStepLevels()
   local steps = {}
-
   for _,seq in ipairs(sequencers) do
-    local active = seq.steps[seq.index]
-    local activePos = findPosition(active.x, active.y)
-    steps[activePos] = steps[activePos] == nil
-      and GRID_LEVELS.LOW_MED
-      or math.max(steps[activePos], GRID_LEVELS.LOW_MED)
-
     for i,step in ipairs(seq.steps) do
-      if i ~= seq.index then
-        local inactivePos = findPosition(step.x, step.y)
-        steps[inactivePos] = steps[inactivePos] == nil
-          and GRID_LEVELS.DIM
-          or math.max(steps[inactivePos], GRID_LEVELS.DIM)
-      end
-
-      local enabledPos = findPosition(step.x, step.y)
-      local isOn = on[enabledPos] == 1
-
-      if isOn then
+      local pos = findPosition(step.x, step.y)
+      -- step activated
+      if on[pos] == 1 then
         if i == seq.index then
-          steps[enabledPos] = GRID_LEVELS.HIGH
+          steps[pos] = GRID_LEVELS.HIGH
         else
-          steps[enabledPos] = steps[enabledPos] == nil
+          steps[pos] = steps[pos] == nil
             and GRID_LEVELS.MED
-            or math.max(steps[enabledPos], GRID_LEVELS.MED)
+            or math.max(steps[pos], GRID_LEVELS.MED)
         end
+      -- step highlighted but not activated
+      elseif i == seq.index then
+        steps[pos] = steps[pos] == nil
+          and GRID_LEVELS.LOW_MED
+          or math.max(steps[pos], GRID_LEVELS.LOW_MED)
+      -- step not highlighted or activated
+      else
+        steps[pos] = steps[pos] == nil
+          and GRID_LEVELS.DIM
+          or math.max(steps[pos], GRID_LEVELS.DIM)
       end
     end
   end
-
   return steps
 end
 
