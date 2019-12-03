@@ -1,12 +1,16 @@
 local GRID_HEIGHT, GRID_LENGTH = 8, 16
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
 local g = grid.connect()
-local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 7, HIGH = 14}
-local state = {held = nil}
+local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
+local state = {
+  held = nil,
+  moveSeq = false,
+}
 local sequencers = {}
 local mainClock = metro.init()
 local MusicUtil = require "musicutil"
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
+local hs = include("awake/lib/halfsecond")
 engine.name = "MollyThePoly"
 
 function findPosition(x, y)
@@ -76,6 +80,8 @@ function init()
   g.key = gridKey
   mainClock.event = count
   mainClock:start()
+  hs.init()
+  params:set('delay_rate', 1.333)
   redraw()
 end
 
@@ -125,7 +131,60 @@ end
 
 function key(n, z) end
 
-function enc(n, delta) end
+function moveSteps(steps, axis, delta, wrapLength)
+  clearStepState(steps)
+  local newOn = {}
+
+  for i=1,#steps do
+    local step = steps[i]
+    local pos = findPosition(step.x, step.y)
+    step[axis] = (step[axis] + delta - 1) % wrapLength + 1
+    if on[pos] > 0 then
+--      table.insert(oldOn, pos)
+      newOn[pos] = -1
+      local newPos = findPosition(step.x, step.y)
+      newOn[newPos] = 1
+--      table.insert(newOn, newPos)
+    end
+  end
+
+  updateStepState(steps)
+  return newOn
+end
+
+function enc(n, delta)
+  local newOn = {}
+  if n == 3 then
+    for i=1,#sequencers do
+      local resp = moveSteps(sequencers[i].steps, 'x', delta, GRID_LENGTH)
+      for pos,n in pairs(resp) do
+        if newOn[pos] == nil then
+          newOn[pos] = n
+        else newOn[pos] = newOn[pos] + n
+        end
+      end
+    end
+    gridDraw()
+    redraw()
+  end
+  if n == 2 then
+    for i=1,#sequencers do
+      local resp = moveSteps(sequencers[i].steps, 'y', delta, GRID_HEIGHT)
+      for pos,n in pairs(resp) do
+        if newOn[pos] == nil then
+          newOn[pos] = n
+        else newOn[pos] = newOn[pos] + n
+        end
+      end
+    end
+    gridDraw()
+    redraw()
+  end
+
+  for pos,n in pairs(newOn) do
+    on[pos] = on[pos] + n
+  end
+end
 
 function gridKey(x, y, z)
   if z == 1 then
@@ -173,7 +232,6 @@ function handleGridKeyDown(x, y)
 end
 
 function clearSeq(index)
-  -- todo: step state needs to be aware of overlapping seqeuences
   clearStepState(sequencers[index].steps)
   clearOnState(sequencers[index].steps)
   table.remove(sequencers, index)
@@ -212,7 +270,7 @@ end
 function screenDrawSteps()
   for pos,level in pairs(getStepLevels()) do
     local step = findXY(pos)
-    local padding = 5
+    local padding = 4
     screen.level(level)
     screen.rect(step.x+(padding*step.x) - padding, step.y+(padding*step.y) - padding, 3, 3)
     screen.fill()
@@ -270,8 +328,6 @@ function getNewLineSteps(a, b)
     return getStepsVertical(a, b)
   elseif math.abs(a.x - b.x) == math.abs(a.y - b.y) then
     return getStepsDiagonal(a, b)
-    -- else
-    --   return getStepsJagged(a, b)
   end
 end
 
@@ -279,12 +335,12 @@ function getStepsHorizontal(a, b)
   local steps = {}
   if a.x < b.x then
     for i = a.x, b.x do
-      table.insert(steps, {x = i, y = a.y})
+      table.insert(steps, {x = i, y = a.y, on = 0})
     end
     return steps
   else
     for i = a.x, b.x, -1 do
-      table.insert(steps, {x = i, y = a.y})
+      table.insert(steps, {x = i, y = a.y, on = 0})
     end
     return steps
   end
@@ -294,11 +350,11 @@ function getStepsVertical(a, b)
   local steps = {}
   if a.y < b.y then
     for i = a.y, b.y do
-      table.insert(steps, {x = a.x, y = i})
+      table.insert(steps, {x = a.x, y = i, on = 0})
     end
   else
     for i = a.y, b.y, -1 do
-      table.insert(steps, {x = a.x, y = i})
+      table.insert(steps, {x = a.x, y = i, on = 0})
     end
   end
   return steps
@@ -310,7 +366,7 @@ function getStepsDiagonal(a, b)
 
   if a.x < b.x then
     for i = a.x,b.x do
-      table.insert(steps, {x = i, y = y})
+      table.insert(steps, {x = i, y = y, on = 0})
       if a.y > b.y then
         y = y - 1
       else
@@ -319,7 +375,7 @@ function getStepsDiagonal(a, b)
     end
   else
     for i = a.x,b.x,-1 do
-      table.insert(steps, {x = i, y = y})
+      table.insert(steps, {x = i, y = y, on = 0})
       if a.y > b.y then
         y = y - 1
       else
@@ -330,54 +386,3 @@ function getStepsDiagonal(a, b)
 
   return steps
 end
-
--- function getStepsJagged(a, b)
---   local steps = {}
---   -- local first
---   -- local last
-
---   -- if a.x < b.x then
---   --   first = a
---   --   last = b
---   -- else
---   --   first = b
---   --   last =  a
---   -- end
-
---   local x = a.x
---   local y = a.y
-
---   -- g:led(x, y, GRID_LEVELS.DIM)
---   table.insert(steps, {x = x, y = y})
-
---   while x ~= b.x or y ~= b.y do
---     if x ~= b.x and y ~= b.y then
---       if math.random(2) == 1 then
---         if x < b.x then
---           x = x + 1
---         else
---           x = x - 1
---         end
---       elseif y < b.y then
---         y = y + 1
---       else
---         y = y - 1
---       end
---     elseif x ~= b.x then
---       if x < b.x then
---         x = x + 1
---       else
---         x = x - 1
---       end
---     elseif y ~= b.y then
---       if y < b.y then
---         y = y + 1
---       else
---         y = y - 1
---       end
---     end
---     -- g:led(x, y, GRID_LEVELS.DIM)
---     table.insert(steps, {x = x, y = y})
---   end
---   return steps
--- end
