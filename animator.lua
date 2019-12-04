@@ -1,9 +1,11 @@
-local GRID_HEIGHT, GRID_LENGTH = 8, 16
+local GRID_HEIGHT, GRID_LENGTH = 8, 15
+local GRID_NAV_COL = 16
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
 local g = grid.connect()
 local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
 local state = {
   held = nil,
+  snapshot = 0,
 }
 local sequencers = {}
 local clk = metro.init()
@@ -175,12 +177,27 @@ function gridKey(x, y, z)
 end
 
 function handleGridKeyDown(x, y)
+  if x <= GRID_LENGTH then
+    mainSeqGridHandler(x, y)
+  elseif x == GRID_NAV_COL then
+    handleNavSelect(y)
+  end
+end
+
+function handleNavSelect(y)
+  if y >= 1 and y <= 4 then
+    state.snapshot = y
+    gridDraw()
+  end
+end
+
+function mainSeqGridHandler(x, y)
   if state.held ~= nil then
     for i=1,#sequencers do
       local ln = sequencers[i].length
       local steps = sequencers[i].steps
       if (state.held.x == steps[1].x and state.held.y == steps[1].y and x == steps[ln].x and y == steps[ln].y)
-      or (state.held.x == steps[ln].x and state.held.y == steps[ln].y and x == steps[1].x and y == steps[1].y) then
+              or (state.held.x == steps[ln].x and state.held.y == steps[ln].y and x == steps[1].x and y == steps[1].y) then
         clearSeq(i)
         gridDraw()
         redraw()
@@ -264,6 +281,14 @@ function gridDraw()
   for pos,level in pairs(getStepLevels()) do
     local step = findXY(pos)
     g:led(step.x, step.y, level)
+  end
+
+  for i=1,4 do
+    if state.snapshot == i then
+      g:led(GRID_NAV_COL, i, GRID_LEVELS.HIGH)
+    else
+      g:led(GRID_NAV_COL, i, GRID_LEVELS.LOW_MED)
+    end
   end
   g:refresh()
 end
