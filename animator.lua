@@ -4,10 +4,9 @@ local g = grid.connect()
 local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
 local state = {
   held = nil,
-  moveSeq = false,
 }
 local sequencers = {}
-local mainClock = metro.init()
+local clk = metro.init()
 local MusicUtil = require "musicutil"
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
 local hs = include("awake/lib/halfsecond")
@@ -32,25 +31,17 @@ local on = initStepState()
 local stepState = initStepState()
 
 local Sequencer = {}
-Sequencer.__index = Sequencer
 
 function Sequencer.new(steps)
-  local seq = {
-    ID = os.time() + math.random(999999),
-    steps = steps, -- steps store positions on both axes
-    index = 1, -- current step
+  return {
+    ID = os.time(),
+    steps = steps,
+    index = 1,
     length = #steps,
     intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
     div = 1,
     divCount = 1,
-    xRate = 0, -- if ~= 0, move to right/left every xRate steps
-    xRateCount = 1,
-    yRate = 0,
-    yRateCount = 1,
   }
-  setmetatable(seq, Sequencer)
-  setmetatable(seq, {__index = Sequencer})
-  return seq
 end
 
 function mapGridNotes()
@@ -78,8 +69,8 @@ function init()
   initParams()
   math.randomseed(os.time())
   g.key = gridKey
-  mainClock.event = count
-  mainClock:start()
+  clk.event = count
+  clk:start()
   hs.init()
   params:set('delay_rate', 1.333)
   redraw()
@@ -87,7 +78,7 @@ end
 
 function initParams()
   params:add_number('tempo', 'tempo', 20, 999, 120)
-  params:set_action('tempo', function(v) mainClock.time = 60 / v end)
+  params:set_action('tempo', function(v) clk.time = 60 / v end)
   MollyThePoly.add_params()
   params:set('env_2_decay', 0.2)
   params:set('env_2_sustain', 0)
@@ -131,20 +122,17 @@ end
 
 function key(n, z) end
 
-function moveSteps(steps, axis, delta, wrapLength)
+function moveSteps(steps, axis, delta, wrap)
   clearStepState(steps)
   local newOn = {}
 
   for i=1,#steps do
     local step = steps[i]
     local pos = findPosition(step.x, step.y)
-    step[axis] = (step[axis] + delta - 1) % wrapLength + 1
+    step[axis] = (step[axis] + delta - 1) % wrap + 1
     if on[pos] > 0 then
---      table.insert(oldOn, pos)
       newOn[pos] = -1
-      local newPos = findPosition(step.x, step.y)
-      newOn[newPos] = 1
---      table.insert(newOn, newPos)
+      newOn[findPosition(step.x, step.y)] = 1
     end
   end
 
@@ -152,37 +140,29 @@ function moveSteps(steps, axis, delta, wrapLength)
   return newOn
 end
 
-function enc(n, delta)
+function moveSequencers(axis, delta, wrap)
   local newOn = {}
-  if n == 3 then
-    for i=1,#sequencers do
-      local resp = moveSteps(sequencers[i].steps, 'x', delta, GRID_LENGTH)
-      for pos,n in pairs(resp) do
-        if newOn[pos] == nil then
-          newOn[pos] = n
-        else newOn[pos] = newOn[pos] + n
-        end
+  for i=1,#sequencers do
+    local resp = moveSteps(sequencers[i].steps, axis, delta, wrap)
+    for pos,n in pairs(resp) do
+      if newOn[pos] == nil then newOn[pos] = n
+      else newOn[pos] = newOn[pos] + n
       end
     end
+  end
+  for pos,n in pairs(newOn) do on[pos] = on[pos] + n end
+end
+
+function enc(n, delta)
+  if n == 3 then
+    moveSequencers('x', delta, GRID_LENGTH)
     gridDraw()
     redraw()
   end
   if n == 2 then
-    for i=1,#sequencers do
-      local resp = moveSteps(sequencers[i].steps, 'y', delta, GRID_HEIGHT)
-      for pos,n in pairs(resp) do
-        if newOn[pos] == nil then
-          newOn[pos] = n
-        else newOn[pos] = newOn[pos] + n
-        end
-      end
-    end
+    moveSequencers('y', delta, GRID_HEIGHT)
     gridDraw()
     redraw()
-  end
-
-  for pos,n in pairs(newOn) do
-    on[pos] = on[pos] + n
   end
 end
 
@@ -200,7 +180,7 @@ function handleGridKeyDown(x, y)
       local ln = sequencers[i].length
       local steps = sequencers[i].steps
       if (state.held.x == steps[1].x and state.held.y == steps[1].y and x == steps[ln].x and y == steps[ln].y)
-        or (state.held.x == steps[ln].x and state.held.y == steps[ln].y and x == steps[1].x and y == steps[1].y) then
+      or (state.held.x == steps[ln].x and state.held.y == steps[ln].y and x == steps[1].x and y == steps[1].y) then
         clearSeq(i)
         gridDraw()
         redraw()
@@ -248,19 +228,19 @@ function getStepLevels()
           steps[pos] = GRID_LEVELS.HIGH
         else
           steps[pos] = steps[pos] == nil
-            and GRID_LEVELS.MED
-            or math.max(steps[pos], GRID_LEVELS.MED)
+                  and GRID_LEVELS.MED
+                  or math.max(steps[pos], GRID_LEVELS.MED)
         end
-      -- step highlighted but not activated
+        -- step highlighted but not activated
       elseif i == seq.index then
         steps[pos] = steps[pos] == nil
-          and GRID_LEVELS.LOW_MED
-          or math.max(steps[pos], GRID_LEVELS.LOW_MED)
-      -- step not highlighted or activated
+                and GRID_LEVELS.LOW_MED
+                or math.max(steps[pos], GRID_LEVELS.LOW_MED)
+        -- step not highlighted or activated
       else
         steps[pos] = steps[pos] == nil
-          and GRID_LEVELS.DIM
-          or math.max(steps[pos], GRID_LEVELS.DIM)
+                and GRID_LEVELS.DIM
+                or math.max(steps[pos], GRID_LEVELS.DIM)
       end
     end
   end
