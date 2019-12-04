@@ -10,9 +10,11 @@ local state = {
 local sequencers = {}
 local clk = metro.init()
 local MusicUtil = require "musicutil"
-local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
-local hs = include("awake/lib/halfsecond")
+local parameters = include('lib/parameters')
 engine.name = "MollyThePoly"
+
+local animator = {}
+animator.clock = clk
 
 local snapshots = {}
 
@@ -91,26 +93,12 @@ end
 local notes = mapGridNotes('major')
 
 function init()
-  initParams()
   math.randomseed(os.time())
-  g.key = gridKey
+  parameters.init(animator)
   clk.event = count
+  g.key = gridKey
   clk:start()
-  hs.init()
-  params:set('delay_rate', 1.333)
   redraw()
-end
-
-function initParams()
-  params:add_number('tempo', 'tempo', 20, 999, 120)
-  params:set_action('tempo', function(v) clk.time = 60 / v end)
-  MollyThePoly.add_params()
-  params:set('env_2_decay', 0.2)
-  params:set('env_2_sustain', 0)
-  params:set('env_2_release', 0.1)
-  params:set('osc_wave_shape', 1)
-  params:set('noise_level', 0)
-  params:set('chorus_mix', 0)
 end
 
 function count()
