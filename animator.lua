@@ -5,7 +5,7 @@ local g = grid.connect()
 local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
 local state = {
   held = nil,
-  snapshot = 0,
+  selectedSnapshot = 0,
 }
 local sequencers = {}
 local clk = metro.init()
@@ -13,6 +13,14 @@ local MusicUtil = require "musicutil"
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
 local hs = include("awake/lib/halfsecond")
 engine.name = "MollyThePoly"
+
+local snapshots = {}
+
+function copyTable(tbl)
+  local copy = {}
+  for k,v in pairs(tbl) do copy[k] = v end
+  return copy
+end
 
 function findPosition(x, y)
   return GRID_LENGTH * (y - 1) + x
@@ -24,32 +32,47 @@ end
 
 function initStepState()
   local steps = {}
-  -- for checking can step be activated ie steps[128] = 1
   for i=1,GRID_HEIGHT*GRID_LENGTH do steps[i] = 0 end
   return steps
 end
 
 local on = initStepState()
-local stepState = initStepState()
+local enabled = initStepState()
 
 local Sequencer = {}
 
-function Sequencer.new(steps)
+function Sequencer.new(options)
   return {
-    ID = os.time(),
-    steps = steps,
+    ID = options.ID or os.time(),
+    steps = copyTable(options.steps),
     index = 1,
-    length = #steps,
+    length = #options.steps,
     intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
     div = 1,
     divCount = 1,
   }
 end
 
-function mapGridNotes()
+local Snapshot = {}
+
+function Snapshot.new(options)
+  local snapshot = {
+    sequencers = {},
+    on = copyTable(options.on),
+    enabled = copyTable(options.enabled),
+  }
+  for i=1,#options.sequencers do
+    local steps = copyTable(options.sequencers[i].steps)
+    table.insert(snapshot.sequencers, Sequencer.new{steps = steps})
+  end
+
+  return snapshot
+end
+
+function mapGridNotes(scale)
   local notes = {}
   local pointer = 0
-  local intervals = MusicUtil.generate_scale(24, 'major', 6)
+  local intervals = MusicUtil.generate_scale(24, scale, 6)
   local stepNum = GRID_HEIGHT*GRID_LENGTH
   local startPos = stepNum - GRID_LENGTH + 1
   local pos = startPos
@@ -65,7 +88,7 @@ function mapGridNotes()
   return notes
 end
 
-local notes = mapGridNotes()
+local notes = mapGridNotes('major')
 
 function init()
   initParams()
@@ -138,7 +161,7 @@ function moveSteps(steps, axis, delta, wrap)
     end
   end
 
-  updateStepState(steps)
+  updateEnabled(steps)
   return newOn
 end
 
@@ -186,8 +209,17 @@ end
 
 function handleNavSelect(y)
   if y >= 1 and y <= 4 then
-    state.snapshot = y
+    state.selectedSnapshot = y
+
+    if snapshots[y] == nil then
+      table.insert(snapshots, Snapshot.new{on = on, enabled = enabled, sequencers = sequencers})
+    end
+
+    on = copyTable(snapshots[y].on)
+    enabled = copyTable(snapshots[y].enabled)
+    sequencers = copyTable(snapshots[y].sequencers)
     gridDraw()
+    redraw()
   end
 end
 
@@ -208,8 +240,8 @@ function mainSeqGridHandler(x, y)
 
     local steps = getNewLineSteps(state.held, {x = x, y = y})
     if steps ~= nil then
-      table.insert(sequencers, Sequencer.new(steps))
-      updateStepState(steps)
+      table.insert(sequencers, Sequencer.new{steps = steps})
+      updateEnabled(steps)
       updateOnState(steps)
       state.held = {x = x, y = y}
     end
@@ -217,9 +249,9 @@ function mainSeqGridHandler(x, y)
     local pos = findPosition(x, y)
     if on[pos] > 0 then
       on[pos] = 0
-    elseif stepState[pos] > 0 then
+    elseif enabled[pos] > 0 then
       -- set on to same number of enabled at position
-      on[pos] = stepState[pos]
+      on[pos] = enabled[pos]
     end
     state.held = {x = x, y = y}
   end
@@ -284,7 +316,7 @@ function gridDraw()
   end
 
   for i=1,4 do
-    if state.snapshot == i then
+    if state.selectedSnapshot == i then
       g:led(GRID_NAV_COL, i, GRID_LEVELS.HIGH)
     else
       g:led(GRID_NAV_COL, i, GRID_LEVELS.LOW_MED)
@@ -293,10 +325,10 @@ function gridDraw()
   g:refresh()
 end
 
-function updateStepState(steps)
+function updateEnabled(steps)
   for _,step in ipairs(steps) do
     local pos = findPosition(step.x, step.y)
-    stepState[pos] = stepState[pos] + 1
+    enabled[pos] = enabled[pos] + 1
   end
 end
 
@@ -312,7 +344,7 @@ end
 function clearStepState(steps)
   for _,step in ipairs(steps) do
     local pos = findPosition(step.x, step.y)
-    stepState[pos] = stepState[pos] - 1
+    enabled[pos] = enabled[pos] - 1
   end
 end
 
@@ -340,12 +372,12 @@ function getStepsHorizontal(a, b)
   local steps = {}
   if a.x < b.x then
     for i = a.x, b.x do
-      table.insert(steps, {x = i, y = a.y, on = 0})
+      table.insert(steps, {x = i, y = a.y})
     end
     return steps
   else
     for i = a.x, b.x, -1 do
-      table.insert(steps, {x = i, y = a.y, on = 0})
+      table.insert(steps, {x = i, y = a.y})
     end
     return steps
   end
@@ -355,11 +387,11 @@ function getStepsVertical(a, b)
   local steps = {}
   if a.y < b.y then
     for i = a.y, b.y do
-      table.insert(steps, {x = a.x, y = i, on = 0})
+      table.insert(steps, {x = a.x, y = i})
     end
   else
     for i = a.y, b.y, -1 do
-      table.insert(steps, {x = a.x, y = i, on = 0})
+      table.insert(steps, {x = a.x, y = i})
     end
   end
   return steps
@@ -369,24 +401,19 @@ function getStepsDiagonal(a, b)
   local steps = {}
   local y = a.y
 
+  local function addStep(x)
+    table.insert(steps, {x = x, y = y})
+    if a.y > b.y then
+      y = y - 1
+    else
+      y = y + 1
+    end
+  end
+
   if a.x < b.x then
-    for i = a.x,b.x do
-      table.insert(steps, {x = i, y = y, on = 0})
-      if a.y > b.y then
-        y = y - 1
-      else
-        y = y + 1
-      end
-    end
+    for i = a.x,b.x do addStep(i) end
   else
-    for i = a.x,b.x,-1 do
-      table.insert(steps, {x = i, y = y, on = 0})
-      if a.y > b.y then
-        y = y - 1
-      else
-        y = y + 1
-      end
-    end
+    for i = a.x,b.x,-1 do addStep(i) end
   end
 
   return steps
