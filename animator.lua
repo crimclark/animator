@@ -103,15 +103,17 @@ end
 
 function count()
   local play = {}
-  for _,seq in ipairs(sequencers) do
+  local findPos = findPosition
+  for i=1,#sequencers do
+    local seq = sequencers[i]
     seq.index = seq.index % seq.length + 1
     local currentStep = seq.steps[seq.index]
-    local pos = findPosition(currentStep.x, currentStep.y)
+    local pos = findPos(currentStep.x, currentStep.y)
     if on[pos] > 0 then
       if play[pos] == nil then
         play[pos] = {seq.ID}
       else
-        table.insert(play[pos], seq.ID)
+        play[pos][#play[pos]+1] = seq.ID
       end
     end
   end
@@ -228,7 +230,7 @@ function mainSeqGridHandler(x, y)
 
     local steps = getNewLineSteps(state.held, {x = x, y = y})
     if steps ~= nil then
-      table.insert(sequencers, Sequencer.new{steps = steps})
+      sequencers[#sequencers+1] = Sequencer.new{steps = steps}
       updateEnabled(steps)
       updateOnState(steps)
       state.held = {x = x, y = y}
@@ -255,33 +257,38 @@ function clearSeq(index)
 end
 
 function getStepLevels()
-  local steps = {}
-  for _,seq in ipairs(sequencers) do
-    for i,step in ipairs(seq.steps) do
-      local pos = findPosition(step.x, step.y)
+  local levels = {}
+  local findPos = findPosition
+  local max = math.max
+  for i=1,#sequencers do
+    local seq = sequencers[i]
+    local steps = seq.steps
+    for i=1,#steps do
+      local step = steps[i]
+      local pos = findPos(step.x, step.y)
       -- step activated
       if on[pos] > 0 then
         if i == seq.index then
-          steps[pos] = GRID_LEVELS.HIGH
+          levels[pos] = GRID_LEVELS.HIGH
         else
-          steps[pos] = steps[pos] == nil
+          levels[pos] = levels[pos] == nil
                   and GRID_LEVELS.MED
-                  or math.max(steps[pos], GRID_LEVELS.MED)
+                  or max(levels[pos], GRID_LEVELS.MED)
         end
         -- step highlighted but not activated
       elseif i == seq.index then
-        steps[pos] = steps[pos] == nil
+        levels[pos] = levels[pos] == nil
                 and GRID_LEVELS.LOW_MED
-                or math.max(steps[pos], GRID_LEVELS.LOW_MED)
+                or max(levels[pos], GRID_LEVELS.LOW_MED)
         -- step not highlighted or activated
       else
-        steps[pos] = steps[pos] == nil
+        levels[pos] = levels[pos] == nil
                 and GRID_LEVELS.DIM
-                or math.max(steps[pos], GRID_LEVELS.DIM)
+                or max(levels[pos], GRID_LEVELS.DIM)
       end
     end
   end
-  return steps
+  return levels
 end
 
 function screenDrawSteps()
@@ -314,14 +321,16 @@ function gridDraw()
 end
 
 function updateEnabled(steps)
-  for _,step in ipairs(steps) do
+  for i=1,#steps do
+    local step = steps[i]
     local pos = findPosition(step.x, step.y)
     enabled[pos] = enabled[pos] + 1
   end
 end
 
 function updateOnState(steps)
-  for _,step in ipairs(steps) do
+  for i=1,#steps do
+    local step = steps[i]
     local pos = findPosition(step.x, step.y)
     if on[pos] > 0 then
       on[pos] = on[pos] + 1
@@ -330,14 +339,16 @@ function updateOnState(steps)
 end
 
 function clearStepState(steps)
-  for _,step in ipairs(steps) do
+  for i=1,#steps do
+    local step = steps[i]
     local pos = findPosition(step.x, step.y)
     enabled[pos] = enabled[pos] - 1
   end
 end
 
 function clearOnState(steps)
-  for _,step in ipairs(steps) do
+  for i=1,#steps do
+    local step = steps[i]
     local pos = findPosition(step.x, step.y)
     if on[pos] > 0 then
       on[pos] = on[pos] - 1
@@ -360,12 +371,12 @@ function getStepsHorizontal(a, b)
   local steps = {}
   if a.x < b.x then
     for i = a.x, b.x do
-      table.insert(steps, {x = i, y = a.y})
+      steps[#steps+1] = {x = i, y = a.y}
     end
     return steps
   else
     for i = a.x, b.x, -1 do
-      table.insert(steps, {x = i, y = a.y})
+      steps[#steps+1] = {x = i, y = a.y}
     end
     return steps
   end
@@ -375,11 +386,11 @@ function getStepsVertical(a, b)
   local steps = {}
   if a.y < b.y then
     for i = a.y, b.y do
-      table.insert(steps, {x = a.x, y = i})
+      steps[#steps+1] = {x = a.x, y = i}
     end
   else
     for i = a.y, b.y, -1 do
-      table.insert(steps, {x = a.x, y = i})
+      steps[#steps+1] = {x = a.x, y = i}
     end
   end
   return steps
@@ -390,7 +401,7 @@ function getStepsDiagonal(a, b)
   local y = a.y
 
   local function addStep(x)
-    table.insert(steps, {x = x, y = y})
+    steps[#steps+1] = {x = x, y = y}
     if a.y > b.y then
       y = y - 1
     else
