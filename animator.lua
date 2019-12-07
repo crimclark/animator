@@ -1,5 +1,6 @@
-local GRID_HEIGHT, GRID_LENGTH = 8, 15
-local GRID_NAV_COL = 16
+local constants = require 'animator/lib/constants'
+local HEIGHT,LENGTH,NAV_COL = constants.GRID_HEIGHT, constants.GRID_LENGTH, constants.GRID_NAV_COL
+local STEP_NUM = HEIGHT*LENGTH
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
 local g = grid.connect()
 local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
@@ -25,16 +26,16 @@ function copyTable(tbl)
 end
 
 function findPosition(x, y)
-  return GRID_LENGTH * (y - 1) + x
+  return LENGTH * (y - 1) + x
 end
 
 function findXY(pos)
-  return {x = (pos - 1) % GRID_LENGTH + 1, y = math.ceil(pos/GRID_LENGTH)}
+  return {x = (pos - 1) % LENGTH + 1, y = math.ceil(pos/LENGTH)}
 end
 
 function initStepState()
   local steps = {}
-  for i=1,GRID_HEIGHT*GRID_LENGTH do steps[i] = 0 end
+  for i=1,STEP_NUM do steps[i] = 0 end
   return steps
 end
 
@@ -71,27 +72,6 @@ function Snapshot.new(options)
   return snapshot
 end
 
-function mapGridNotes(scale)
-  local notes = {}
-  local pointer = 0
-  local intervals = MusicUtil.generate_scale(24, scale, 6)
-  local stepNum = GRID_HEIGHT*GRID_LENGTH
-  local startPos = stepNum - GRID_LENGTH + 1
-  local pos = startPos
-  for i=1,GRID_HEIGHT do
-    for j=1,GRID_LENGTH do
-      notes[pos] = intervals[pointer+j]
-      pos = pos + 1
-    end
-    startPos = startPos - GRID_LENGTH
-    pos = startPos
-    pointer = pointer + 3
-  end
-  return notes
-end
-
-local notes = mapGridNotes('major')
-
 function init()
   math.randomseed(os.time())
   parameters.init(animator)
@@ -104,6 +84,8 @@ end
 function count()
   local play = {}
   local findPos = findPosition
+  local noteOn = engine.noteOn
+
   for i=1,#sequencers do
     local seq = sequencers[i]
     seq.index = seq.index % seq.length + 1
@@ -121,7 +103,7 @@ function count()
   for pos,seqs in pairs(play) do
     local note = notes[pos]
     if #seqs > 1 then note = note + 12 end
-    engine.noteOn(note, MusicUtil.note_num_to_freq(note), 1)
+    noteOn(note, MusicUtil.note_num_to_freq(note), 1)
   end
   gridDraw()
   redraw()
@@ -170,12 +152,12 @@ end
 
 function enc(n, delta)
   if n == 3 then
-    moveSequencers('x', delta, GRID_LENGTH)
+    moveSequencers('x', delta, LENGTH)
     gridDraw()
     redraw()
   end
   if n == 2 then
-    moveSequencers('y', delta, GRID_HEIGHT)
+    moveSequencers('y', delta, HEIGHT)
     gridDraw()
     redraw()
   end
@@ -190,9 +172,9 @@ function gridKey(x, y, z)
 end
 
 function handleGridKeyDown(x, y)
-  if x <= GRID_LENGTH then
+  if x <= LENGTH then
     mainSeqGridHandler(x, y)
-  elseif x == GRID_NAV_COL then
+  elseif x == NAV_COL then
     handleNavSelect(y)
   end
 end
@@ -312,9 +294,9 @@ function gridDraw()
 
   for i=1,4 do
     if state.selectedSnapshot == i then
-      g:led(GRID_NAV_COL, i, GRID_LEVELS.HIGH)
+      g:led(NAV_COL, i, GRID_LEVELS.HIGH)
     else
-      g:led(GRID_NAV_COL, i, GRID_LEVELS.LOW_MED)
+      g:led(NAV_COL, i, GRID_LEVELS.LOW_MED)
     end
   end
   g:refresh()
