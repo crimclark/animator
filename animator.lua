@@ -1,4 +1,9 @@
-local constants = require 'animator/lib/constants'
+local constants = require 'lib/constants'
+local helpers = require 'lib/helpers'
+local parameters = include('lib/parameters')
+local Sequencer = include('lib/Sequencer')
+local MusicUtil = require 'musicutil'
+local findPosition = helpers.findPosition
 local HEIGHT,LENGTH,NAV_COL = constants.GRID_HEIGHT, constants.GRID_LENGTH, constants.GRID_NAV_COL
 local STEP_NUM = HEIGHT*LENGTH
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
@@ -10,8 +15,6 @@ local state = {
 }
 local sequencers = {}
 local clk = metro.init()
-local MusicUtil = require "musicutil"
-local parameters = include('lib/parameters')
 engine.name = "MollyThePoly"
 
 local animator = {}
@@ -25,14 +28,6 @@ function copyTable(tbl)
   return copy
 end
 
-function findPosition(x, y)
-  return LENGTH * (y - 1) + x
-end
-
-function findXY(pos)
-  return {x = (pos - 1) % LENGTH + 1, y = math.ceil(pos/LENGTH)}
-end
-
 function initStepState()
   local steps = {}
   for i=1,STEP_NUM do steps[i] = 0 end
@@ -41,20 +36,6 @@ end
 
 local on = initStepState()
 local enabled = initStepState()
-
-local Sequencer = {}
-
-function Sequencer.new(options)
-  return {
-    ID = options.ID or os.time(),
-    steps = copyTable(options.steps),
-    index = 1,
-    length = #options.steps,
-    intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
-    div = 1,
-    divCount = 1,
-  }
-end
 
 local Snapshot = {}
 
@@ -151,13 +132,12 @@ function moveSequencers(axis, delta, wrap)
 end
 
 function enc(n, delta)
-  if n == 3 then
-    moveSequencers('x', delta, LENGTH)
-    gridDraw()
-    redraw()
-  end
   if n == 2 then
     moveSequencers('y', delta, HEIGHT)
+    gridDraw()
+    redraw()
+  elseif n == 3 then
+    moveSequencers('x', delta, LENGTH)
     gridDraw()
     redraw()
   end
@@ -274,6 +254,7 @@ function getStepLevels()
 end
 
 function screenDrawSteps()
+  local findXY = helpers.findXY
   for pos,level in pairs(getStepLevels()) do
     local step = findXY(pos)
     local padding = 4
@@ -287,6 +268,7 @@ end
 
 function gridDraw()
   g:all(0)
+  local findXY = helpers.findXY
   for pos,level in pairs(getStepLevels()) do
     local step = findXY(pos)
     g:led(step.x, step.y, level)
