@@ -1,9 +1,13 @@
+local helpers = include('lib/helpers')
 local Sequencer = {}
 Sequencer.__index = Sequencer
 
 function createStepMap(steps)
   local map = {}
-  for _,v in ipairs(steps) do map[v] = 1 end
+  local findPos = helpers.findPosition
+  for _,v in ipairs(steps) do
+    map[findPos(v.x, v.y)] = 1
+  end
   return map
 end
 

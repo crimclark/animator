@@ -9,6 +9,7 @@ local STEP_NUM = HEIGHT*LENGTH
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
 local g = grid.connect()
 local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
+local SNAPSHOT_NUM = 4
 local state = {
   held = nil,
   selectedSnapshot = 0,
@@ -78,6 +79,7 @@ function count()
   local play = {}
   local findPos = findPosition
   local noteOn = engine.noteOn
+  local numToFreq = MusicUtil.note_num_to_freq
 
   for i=1,#sequencers do
     local seq = sequencers[i]
@@ -96,7 +98,7 @@ function count()
   for pos,seqs in pairs(play) do
     local note = animator.notes[pos]
     if #seqs > 1 then note = note + 12 end
-    noteOn(note, MusicUtil.note_num_to_freq(note), 1)
+    noteOn(note, numToFreq(note), math.random(127)/127)
   end
   gridDraw()
   redraw()
@@ -193,41 +195,73 @@ function setToSnapshot(snapshot)
   sequencers = deepcopy(snapshot.sequencers)
 end
 
+function findOverlapIndex(posA, posB)
+  for i=1,#sequencers do
+    local stepMap = sequencers[i].stepMap
+    if stepMap[posA] ~= nil  and stepMap[posB] ~= nil then
+      return i
+    end
+  end
+end
+
+function handleOverlap(pos, posHeld, index)
+  local seq = sequencers[index]
+  local steps = sequencers[index].steps
+  local first = findPosition(steps[1].x, steps[1].y)
+  local last = findPosition(steps[seq.length].x, steps[seq.length].y)
+
+  if (pos == first and posHeld == last) or (posHeld == first and pos == last) then
+    clearSeq(index)
+    gridDraw()
+    redraw()
+    screen.clear()
+  end
+end
+
 function mainSeqGridHandler(x, y)
-  if state.held ~= nil then
-    for i=1,#sequencers do
-      local ln = sequencers[i].length
-      local steps = sequencers[i].steps
-      if (state.held.x == steps[1].x and state.held.y == steps[1].y and x == steps[ln].x and y == steps[ln].y)
-              or (state.held.x == steps[ln].x and state.held.y == steps[ln].y and x == steps[1].x and y == steps[1].y) then
-        clearSeq(i)
-        gridDraw()
-        redraw()
-        screen.clear()
-        return
+  local held = state.held
+  local posHeld
+  if held ~= nil then
+    posHeld = findPosition(held.x, held.y)
+  end
+  local pos = findPosition(x, y)
+
+  if posHeld ~= nil then
+    if enabled[posHeld] > 0 and enabled[pos] > 0 then
+      local overlapIndex = findOverlapIndex(pos, posHeld)
+      if overlapIndex ~= nil then
+        return handleOverlap(pos, posHeld, overlapIndex)
       end
     end
 
-    local steps = getNewLineSteps(state.held, {x = x, y = y})
-    if steps ~= nil then
-      sequencers[#sequencers+1] = Sequencer.new{steps = steps}
-      updateEnabled(steps)
-      updateOnState(steps)
-      state.held = {x = x, y = y}
-    end
+    createNewSequence(x, y)
   else
-    local pos = findPosition(x, y)
-    if on[pos] > 0 then
-      on[pos] = 0
-    elseif enabled[pos] > 0 then
-      -- set on to same number of enabled at position
-      on[pos] = enabled[pos]
-    end
+    toggleStepOn(x, y)
     state.held = {x = x, y = y}
   end
   gridDraw()
   redraw()
   screen.clear()
+end
+
+function toggleStepOn(x, y)
+  local pos = findPosition(x, y)
+  if on[pos] > 0 then
+    on[pos] = 0
+  elseif enabled[pos] > 0 then
+    on[pos] = enabled[pos]
+  end
+end
+
+function createNewSequence(x, y)
+  local steps = getNewLineSteps(state.held, {x = x, y = y})
+  if steps ~= nil then
+    sequencers[#sequencers+1] = Sequencer.new{steps = steps}
+    updateEnabled(steps)
+    updateOnState(steps)
+    -- should this be here?
+--    state.held = {x = x, y = y}
+  end
 end
 
 function clearSeq(index)
@@ -292,7 +326,7 @@ function gridDraw()
     g:led(step.x, step.y, level)
   end
 
-  for i=1,4 do
+  for i=1,SNAPSHOT_NUM do
     if state.selectedSnapshot == i then
       g:led(NAV_COL, i, GRID_LEVELS.HIGH)
     else
@@ -315,7 +349,7 @@ function updateOnState(steps)
     local step = steps[i]
     local pos = findPosition(step.x, step.y)
     if on[pos] > 0 then
-      on[pos] = on[pos] + 1
+      on[pos] = enabled[pos]
     end
   end
 end
