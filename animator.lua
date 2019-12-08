@@ -198,9 +198,7 @@ end
 function findOverlapIndex(posA, posB)
   for i=1,#sequencers do
     local stepMap = sequencers[i].stepMap
-    if stepMap[posA] ~= nil  and stepMap[posB] ~= nil then
-      return i
-    end
+    if stepMap[posA] and stepMap[posB] then return i end
   end
 end
 

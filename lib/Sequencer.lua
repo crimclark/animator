@@ -6,7 +6,7 @@ function createStepMap(steps)
   local map = {}
   local findPos = helpers.findPosition
   for _,v in ipairs(steps) do
-    map[findPos(v.x, v.y)] = 1
+    map[findPos(v.x, v.y)] = true
   end
   return map
 end
