@@ -123,7 +123,6 @@ function moveSteps(steps, axis, delta, wrap)
     local pos = findPosition(step.x, step.y)
     step[axis] = (step[axis] + delta - 1) % wrap + 1
     if on[pos] > 0 then
---      newOn[pos] = -1
       newOn[findPosition(step.x, step.y)] = 1
     end
   end
@@ -136,6 +135,7 @@ function moveSequencers(axis, delta, wrap)
   local newOn = {}
   for i=1,#sequencers do
     local resp = moveSteps(sequencers[i].steps, axis, delta, wrap)
+    sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
   for pos,n in pairs(on) do
