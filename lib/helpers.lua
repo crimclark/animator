@@ -1,4 +1,4 @@
-local constants = require 'animator/lib/constants'
+local constants = include('animator/lib/constants')
 local helpers = {}
 
 function helpers.findPosition(x, y)

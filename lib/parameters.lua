@@ -1,4 +1,4 @@
-local constants = require 'animator/lib/constants'
+local constants = include('animator/lib/constants')
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
 local MusicUtil = require "musicutil"
 local hs = include("awake/lib/halfsecond")

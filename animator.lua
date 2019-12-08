@@ -1,5 +1,5 @@
-local constants = require 'lib/constants'
-local helpers = require 'lib/helpers'
+local constants = include('lib/constants')
+local helpers = include('lib/helpers')
 local parameters = include('lib/parameters')
 local Sequencer = include('lib/Sequencer')
 local MusicUtil = require 'musicutil'
@@ -28,6 +28,22 @@ function copyTable(tbl)
   return copy
 end
 
+-- http://lua-users.org/wiki/CopyTable
+function deepcopy(orig)
+  local orig_type = type(orig)
+  local copy
+  if orig_type == 'table' then
+    copy = {}
+    for orig_key, orig_value in next, orig, nil do
+      copy[deepcopy(orig_key)] = deepcopy(orig_value)
+    end
+--    setmetatable(copy, deepcopy(getmetatable(orig)))
+  else -- number, string, boolean, etc
+    copy = orig
+  end
+  return copy
+end
+
 function initStepState()
   local steps = {}
   for i=1,STEP_NUM do steps[i] = 0 end
@@ -41,14 +57,10 @@ local Snapshot = {}
 
 function Snapshot.new(options)
   local snapshot = {
-    sequencers = {},
-    on = copyTable(options.on),
-    enabled = copyTable(options.enabled),
+    sequencers = options.sequencers,
+    on = options.on,
+    enabled = options.enabled,
   }
-  for i=1,#options.sequencers do
-    local steps = copyTable(options.sequencers[i].steps)
-    table.insert(snapshot.sequencers, Sequencer.new{steps = steps})
-  end
 
   return snapshot
 end
@@ -82,7 +94,7 @@ function count()
   end
 
   for pos,seqs in pairs(play) do
-    local note = notes[pos]
+    local note = animator.notes[pos]
     if #seqs > 1 then note = note + 12 end
     noteOn(note, MusicUtil.note_num_to_freq(note), 1)
   end
@@ -109,7 +121,7 @@ function moveSteps(steps, axis, delta, wrap)
     local pos = findPosition(step.x, step.y)
     step[axis] = (step[axis] + delta - 1) % wrap + 1
     if on[pos] > 0 then
-      newOn[pos] = -1
+--      newOn[pos] = -1
       newOn[findPosition(step.x, step.y)] = 1
     end
   end
@@ -122,13 +134,15 @@ function moveSequencers(axis, delta, wrap)
   local newOn = {}
   for i=1,#sequencers do
     local resp = moveSteps(sequencers[i].steps, axis, delta, wrap)
-    for pos,n in pairs(resp) do
-      if newOn[pos] == nil then newOn[pos] = n
-      else newOn[pos] = newOn[pos] + n
-      end
+    for pos,n in pairs(resp) do newOn[pos] = n end
+  end
+  for pos,n in pairs(on) do
+    if newOn[pos] ~= nil then
+      on[pos] = enabled[pos]
+    else
+      on[pos] = 0
     end
   end
-  for pos,n in pairs(newOn) do on[pos] = on[pos] + n end
 end
 
 function enc(n, delta)
@@ -164,15 +178,19 @@ function handleNavSelect(y)
     state.selectedSnapshot = y
 
     if snapshots[y] == nil then
-      table.insert(snapshots, Snapshot.new{on = on, enabled = enabled, sequencers = sequencers})
+      snapshots[y] = Snapshot.new{on = on, enabled = enabled, sequencers = sequencers}
     end
 
-    on = copyTable(snapshots[y].on)
-    enabled = copyTable(snapshots[y].enabled)
-    sequencers = copyTable(snapshots[y].sequencers)
+    setToSnapshot(snapshots[y])
     gridDraw()
     redraw()
   end
+end
+
+function setToSnapshot(snapshot)
+  on = copyTable(snapshot.on)
+  enabled = copyTable(snapshot.enabled)
+  sequencers = deepcopy(snapshot.sequencers)
 end
 
 function mainSeqGridHandler(x, y)
