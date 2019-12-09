@@ -27,7 +27,9 @@ function mapGridNotes(scale)
 end
 
 function parameters.init(animator)
-  hs.init()
+  for i=1,4 do
+    params:set_action(i .. 'lfo', function(v) if v == 1 then animator.original = {} end end)
+  end
   params:add_number('tempo', 'tempo', 20, 999, 120)
   params:set_action('tempo', function(v) animator.clock.time = 60 / v end)
 
@@ -41,7 +43,7 @@ function parameters.init(animator)
   params:set('osc_wave_shape', 1)
   params:set('noise_level', 0)
   params:set('chorus_mix', 0)
-  params:set('delay_rate', 1.333)
+  hs.init()
 end
 
 return parameters

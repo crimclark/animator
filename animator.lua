@@ -2,14 +2,17 @@ local constants = include('lib/constants')
 local helpers = include('lib/helpers')
 local parameters = include('lib/parameters')
 local Sequencer = include('lib/Sequencer')
+local lfo = include("lib/hnds")
 local MusicUtil = require 'musicutil'
 local findPosition = helpers.findPosition
 local HEIGHT,LENGTH,NAV_COL = constants.GRID_HEIGHT, constants.GRID_LENGTH, constants.GRID_NAV_COL
 local STEP_NUM = HEIGHT*LENGTH
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
 local g = grid.connect()
-local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14}
+local GRID_LEVELS = {DIM = 3, LOW_MED = 5, MED = 8, HIGH = 14}
 local SNAPSHOT_NUM = 4
+local LFO_NUM = 4
+local SEQ_NUM = 8
 local state = {
   held = nil,
   selectedSnapshot = 0,
@@ -20,6 +23,7 @@ engine.name = "MollyThePoly"
 
 local animator = {}
 animator.clock = clk
+animator.original = {}
 
 local snapshots = {}
 
@@ -66,8 +70,45 @@ function Snapshot.new(options)
   return snapshot
 end
 
+local lfoTargets = {
+  'none',
+  'All Move X',
+  'All Move Y',
+}
+
+local prevVal = 0
+
+
+function lfo.process()
+  local floor = math.floor
+
+  for i=1,LFO_NUM do
+    local target = params:get(i .. "lfo_target")
+
+    if params:get(i .. 'lfo') == 2 then
+      if target == 2 then
+        local val = floor(lfo[i].slope * LENGTH + 0.5)
+
+        if lfo[i].waveform == 'square' then
+          val = floor(lfo.scale(lfo[i].slope, -1, 1, 1, 15)) - 1
+        end
+
+        print(val)
+
+
+
+        moveSequencersPos('x', val, LENGTH)
+        gridDraw()
+        redraw()
+      end
+    end
+  end
+end
+
 function init()
   math.randomseed(os.time())
+  for i=1,LFO_NUM do lfo[i].lfo_targets = lfoTargets end
+  lfo.init()
   parameters.init(animator)
   clk.event = count
   g.key = gridKey
@@ -131,10 +172,49 @@ function moveSteps(steps, axis, delta, wrap)
   return newOn
 end
 
+function moveStepsPos(index, axis, val, wrap)
+  local steps = sequencers[index].steps
+  clearStepState(steps)
+  local newOn = {}
+
+  local original = animator.original
+  if not original[index] then original[index] = deepcopy(steps) end
+  local originalSteps = original[index]
+  local findPos = findPosition
+
+  for i=1,#steps do
+    local step = steps[i]
+    local pos = findPos(step.x, step.y)
+    step[axis] = (originalSteps[i][axis] + val - 1) % wrap + 1
+    if on[pos] > 0 then
+      newOn[findPos(step.x, step.y)] = 1
+    end
+  end
+
+  updateEnabled(steps)
+  return newOn
+end
+
 function moveSequencers(axis, delta, wrap)
   local newOn = {}
   for i=1,#sequencers do
     local resp = moveSteps(sequencers[i].steps, axis, delta, wrap)
+    sequencers[i]:regenStepMap()
+    for pos,n in pairs(resp) do newOn[pos] = n end
+  end
+  for pos,n in pairs(on) do
+    if newOn[pos] ~= nil then
+      on[pos] = enabled[pos]
+    else
+      on[pos] = 0
+    end
+  end
+end
+
+function moveSequencersPos(axis, val, wrap)
+  local newOn = {}
+  for i=1,#sequencers do
+    local resp = moveStepsPos(i, axis, val, wrap)
     sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
