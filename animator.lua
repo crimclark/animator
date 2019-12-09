@@ -86,23 +86,25 @@ function lfo.process()
     local target = params:get(i .. "lfo_target")
 
     if params:get(i .. 'lfo') == 2 then
-      if target == 2 then
-        local val = floor(lfo[i].slope * LENGTH + 0.5)
-
-        if lfo[i].waveform == 'square' then
-          val = floor(lfo.scale(lfo[i].slope, -1, 1, 1, 15)) - 1
-        end
-
-        print(val)
-
-
-
-        moveSequencersPos('x', val, LENGTH)
-        gridDraw()
-        redraw()
+      if target == 2 then handleMoveLFO(i, 'x', LENGTH)
+      elseif target == 3 then handleMoveLFO(i, 'y', HEIGHT)
       end
     end
   end
+end
+
+function handleMoveLFO(index, axis, wrap)
+  local val = 1
+
+  if lfo[index].waveform == 'square' then
+    val = math.floor(lfo.scale(lfo[index].slope, -1, 1, 1, wrap)) - 1
+  else
+    val = math.floor(lfo[index].slope * wrap + 0.5)
+  end
+
+  moveSequencersPos(axis, val, wrap)
+  gridDraw()
+  redraw()
 end
 
 function init()
