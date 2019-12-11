@@ -76,8 +76,28 @@ local lfoTargets = {
   'All Move Y',
 }
 
+for i=1,8 do
+  lfoTargets[#lfoTargets+1] = 'Seq ' .. i .. ' Move X'
+  lfoTargets[#lfoTargets+1] = 'Seq ' .. i .. ' Move Y'
+end
+
 local prevVal = 0
 
+local lfoHandlers = {}
+lfoHandlers[2] = function(i) handleMoveLFO(i, 'x', LENGTH, handleMoveSeqsLFO) end
+lfoHandlers[3] = function(i) handleMoveLFO(i, 'y', HEIGHT, handleMoveSeqsLFO) end
+lfoHandlers[4] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
+  handleMoveStepsLFO(1, axis, val, wrap)
+end) end
+lfoHandlers[5] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
+  handleMoveStepsLFO(1, axis, val, wrap)
+end) end
+lfoHandlers[6] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
+  handleMoveStepsLFO(2, axis, val, wrap)
+end) end
+lfoHandlers[7] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
+  handleMoveStepsLFO(2, axis, val, wrap)
+end) end
 
 function lfo.process()
   local floor = math.floor
@@ -86,14 +106,25 @@ function lfo.process()
     local target = params:get(i .. "lfo_target")
 
     if params:get(i .. 'lfo') == 2 then
-      if target == 2 then handleMoveLFO(i, 'x', LENGTH)
-      elseif target == 3 then handleMoveLFO(i, 'y', HEIGHT)
-      end
+      lfoHandlers[target](i)
+--      if target == 2 then handleMoveSeqsLFO(i, 'x', LENGTH)
+--      elseif target == 3 then handleMoveSeqsLFO(i, 'y', HEIGHT)
+--      end
     end
   end
 end
 
-function handleMoveLFO(index, axis, wrap)
+function handleMoveSeqsLFO(axis, val, wrap)
+    moveSequencersPos(axis, val, wrap)
+end
+
+function handleMoveStepsLFO(index, axis, val, wrap)
+  local newOn = moveStepsPos(index, axis, val, wrap)
+-- cant do this here
+  refreshOn(newOn)
+end
+
+function handleMoveLFO(index, axis, wrap, callback)
   local val = 1
 
   if lfo[index].waveform == 'square' then
@@ -102,7 +133,8 @@ function handleMoveLFO(index, axis, wrap)
     val = math.floor(lfo[index].slope * wrap + 0.5)
   end
 
-  moveSequencersPos(axis, val, wrap)
+  callback(axis, val, wrap)
+--  moveSequencersPos(axis, val, wrap)
   gridDraw()
   redraw()
 end
@@ -189,6 +221,7 @@ function moveStepsPos(index, axis, val, wrap)
     local pos = findPos(step.x, step.y)
     step[axis] = (originalSteps[i][axis] + val - 1) % wrap + 1
     if on[pos] > 0 then
+      newOn[pos] = -1
       newOn[findPos(step.x, step.y)] = 1
     end
   end
@@ -225,6 +258,18 @@ function moveSequencersPos(axis, val, wrap)
       on[pos] = enabled[pos]
     else
       on[pos] = 0
+    end
+  end
+end
+
+function refreshOn(newOn)
+  for pos,n in pairs(newOn) do
+    print(n)
+    on[pos] = on[pos] + n
+    if n == 1 then
+      on[pos] = enabled[pos]
+    else
+      on[pos] = on[pos] - 1
     end
   end
 end
