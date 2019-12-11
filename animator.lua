@@ -5,6 +5,8 @@ local Sequencer = include('lib/Sequencer')
 local lfo = include("lib/hnds")
 local MusicUtil = require 'musicutil'
 local findPosition = helpers.findPosition
+local copyTable = helpers.copyTable
+local deepcopy = helpers.deepcopy
 local HEIGHT,LENGTH,NAV_COL = constants.GRID_HEIGHT, constants.GRID_LENGTH, constants.GRID_NAV_COL
 local STEP_NUM = HEIGHT*LENGTH
 local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_global'
@@ -26,33 +28,6 @@ animator.clock = clk
 animator.original = {}
 
 local snapshots = {}
-
-function copyTable(tbl)
-  local copy = {}
-  for k,v in pairs(tbl) do copy[k] = v end
-  return copy
-end
-
--- https://stackoverflow.com/questions/640642/how-do-you-copy-a-lua-table-by-value
-local function deepcopy(o, seen)
-  seen = seen or {}
-  if o == nil then return nil end
-  if seen[o] then return seen[o] end
-
-  local no
-  if type(o) == 'table' then
-    no = {}
-    seen[o] = no
-
-    for k, v in next, o, nil do
-      no[deepcopy(k, seen)] = deepcopy(v, seen)
-    end
-    setmetatable(no, deepcopy(getmetatable(o), seen))
-  else -- number, string, boolean, etc
-    no = o
-  end
-  return no
-end
 
 function initStepState()
   local steps = {}
@@ -91,18 +66,6 @@ local prevVal = 0
 local lfoHandlers = {}
 lfoHandlers[2] = function(i) handleMoveLFO(i, 'x', LENGTH, handleMoveSeqsLFO) end
 lfoHandlers[3] = function(i) handleMoveLFO(i, 'y', HEIGHT, handleMoveSeqsLFO) end
--- lfoHandlers[4] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
---   handleMoveStepsLFO(1, axis, val, wrap)
--- end) end
--- lfoHandlers[5] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
---   handleMoveStepsLFO(1, axis, val, wrap)
--- end) end
--- lfoHandlers[6] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
---   handleMoveStepsLFO(2, axis, val, wrap)
--- end) end
--- lfoHandlers[7] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
---   handleMoveStepsLFO(2, axis, val, wrap)
--- end) end
 
 function lfo.process()
   local floor = math.floor
@@ -112,9 +75,6 @@ function lfo.process()
 
     if params:get(i .. 'lfo') == 2 then
       lfoHandlers[target](i)
---      if target == 2 then handleMoveSeqsLFO(i, 'x', LENGTH)
---      elseif target == 3 then handleMoveSeqsLFO(i, 'y', HEIGHT)
---      end
     end
   end
 end
@@ -122,13 +82,6 @@ end
 function handleMoveSeqsLFO(axis, val, wrap)
     moveSequencersPos(axis, val, wrap)
 end
-
--- function handleMoveStepsLFO(index, axis, val, wrap)
---   moveSingleSequencer(index, axis, val, wrap)
--- --   local newOn = moveStepsPos(index, axis, val, wrap)
--- -- -- cant do this here
--- --   refreshOn(newOn)
--- end
 
 function handleMoveLFO(index, axis, wrap, callback)
   local val = 1
@@ -140,7 +93,6 @@ function handleMoveLFO(index, axis, wrap, callback)
   end
 
   callback(axis, val, wrap)
---  moveSequencersPos(axis, val, wrap)
   gridDraw()
   redraw()
 end
@@ -207,7 +159,6 @@ function count()
   gridDraw()
   redraw()
 end
-
 
 function redraw()
   screen.clear()
@@ -291,72 +242,6 @@ function moveSequencersPos(axis, val, wrap)
     end
   end
 end
-
--- function getCurrentOn()
---   local current = {}
---   for i=1,#sequencers do
---     local steps = sequencers[i].steps
---     for j=1,#steps do
---       local step = steps[j]
---       local pos = findPosition(step.x, step.y)
---       if on[pos] > 0 then current[pos] = 1 end
---     end
---   end
---   return current
--- end
---
--- function resetEnabled()
---   local current = initStepState()
---   for i=1,#sequencers do
---     local steps = sequencers[i].steps
---     for j=1,#steps do
---       local step = steps[j]
---       local pos = findPosition(step.x, step.y)
---       current[pos] = current[pos] + 1
---     end
---   end
---   enabled = current
--- end
-
--- function moveSingleSequencer(index, axis, val, wrap)
---   local newOn = getCurrentOn()
---   local resp = moveStepsPos(index, axis, val, wrap)
---   for pos,n in pairs(resp) do
---     if newOn[pos] then
---       newOn[pos] = newOn[pos] + n
---     else
---       newOn[pos] = n
---     end
---   end
---   sequencers[index]:regenStepMap()
--- --   resetEnabled()
---   for pos,n in pairs(on) do
---     if newOn[pos] ~= nil and newOn[pos] >= 1 then
---       on[pos] = enabled[pos]
---     else
---       on[pos] = 0
---     end
---   end
--- --
--- --   for pos,n in pairs(on) do
--- --     if newOn[pos] == 1 then
--- --       on[pos] = enabled[pos]
--- --     else
--- --       on[pos] = 0
--- --     end
--- --   end
--- end
-
--- function refreshOn(newOn)
---   for pos,n in pairs(newOn) do
---     on[pos] = on[pos] + n
---     if n == 1 then
---       on[pos] = enabled[pos]
---     else
---       on[pos] = on[pos] - 1
---     end
---   end
--- end
 
 function enc(n, delta)
   if n == 2 then
