@@ -90,16 +90,16 @@ function lfo.init()
   lfo_metro.count = -1
   lfo_metro.event = function()
     for i = 1, number_of_outputs do
-      local slope
-      if params:get(i .. "lfo") == 1 then
-        break
-      elseif lfo[i].waveform == "sine" then
-        slope = make_sine(i)
-      elseif lfo[i].waveform == "square" then
-        slope = make_square(i)
+      if params:get(i .. "lfo") ~= 1 then
+        local slope
+        if lfo[i].waveform == "sine" then
+          slope = make_sine(i)
+        elseif lfo[i].waveform == "square" then
+          slope = make_square(i)
+        end
+        lfo[i].slope = math.max(-1.0, math.min(1.0, slope)) * (lfo[i].depth * 0.01) + lfo[i].offset
+        lfo[i].counter = lfo[i].counter + lfo[i].freq
       end
-      lfo[i].slope = math.max(-1.0, math.min(1.0, slope)) * (lfo[i].depth * 0.01) + lfo[i].offset
-      lfo[i].counter = lfo[i].counter + lfo[i].freq
     end
     lfo.process()
   end

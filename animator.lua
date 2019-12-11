@@ -2,7 +2,7 @@ local constants = include('lib/constants')
 local helpers = include('lib/helpers')
 local parameters = include('lib/parameters')
 local Sequencer = include('lib/Sequencer')
-local lfo = include("lib/hnds")
+local lfo = include('lib/lfo')
 local MusicUtil = require 'musicutil'
 local findPosition = helpers.findPosition
 local copyTable = helpers.copyTable
@@ -13,7 +13,6 @@ local MUTE, OCTAVE, RESET, RESET_GLOBAL = 'mute', 'octave', 'reset', 'reset_glob
 local g = grid.connect()
 local GRID_LEVELS = {DIM = 3, LOW_MED = 5, MED = 8, HIGH = 14}
 local SNAPSHOT_NUM = 4
-local LFO_NUM = 4
 local SEQ_NUM = 8
 local state = {
   held = nil,
@@ -26,6 +25,10 @@ engine.name = "MollyThePoly"
 local animator = {}
 animator.clock = clk
 animator.original = {}
+animator.drawAll = function()
+  gridDraw()
+  redraw()
+end
 
 local snapshots = {}
 
@@ -50,57 +53,9 @@ function Snapshot.new(options)
   return snapshot
 end
 
-local lfoTargets = {
-  'none',
-  'All Move X',
-  'All Move Y',
-}
-
-for i=1,8 do
-  lfoTargets[#lfoTargets+1] = 'Seq ' .. i .. ' Move X'
-  lfoTargets[#lfoTargets+1] = 'Seq ' .. i .. ' Move Y'
-end
-
-local prevVal = 0
-
-local lfoHandlers = {}
-lfoHandlers[2] = function(i) handleMoveLFO(i, 'x', LENGTH, handleMoveSeqsLFO) end
-lfoHandlers[3] = function(i) handleMoveLFO(i, 'y', HEIGHT, handleMoveSeqsLFO) end
-
-function lfo.process()
-  local floor = math.floor
-
-  for i=1,LFO_NUM do
-    local target = params:get(i .. "lfo_target")
-
-    if params:get(i .. 'lfo') == 2 then
-      lfoHandlers[target](i)
-    end
-  end
-end
-
-function handleMoveSeqsLFO(axis, val, wrap)
-    moveSequencersPos(axis, val, wrap)
-end
-
-function handleMoveLFO(index, axis, wrap, callback)
-  local val = 1
-
-  if lfo[index].waveform == 'square' then
-    val = math.floor(lfo.scale(lfo[index].slope, -1, 1, 1, wrap)) - 1
-  else
-    val = math.floor(lfo[index].slope * wrap + 0.5)
-  end
-
-  callback(axis, val, wrap)
-  gridDraw()
-  redraw()
-end
-
 function init()
   math.randomseed(os.time())
-  for i=1,LFO_NUM do lfo[i].lfo_targets = lfoTargets end
-  lfo.init()
+  lfo.init(animator)
   parameters.init(animator)
   clk.event = count
   g.key = gridKey
@@ -227,7 +182,8 @@ function moveSequencers(axis, delta, wrap)
   end
 end
 
-function moveSequencersPos(axis, val, wrap)
+
+function animator.moveSequencersPos(axis, val, wrap)
   local newOn = {}
   for i=1,#sequencers do
     local resp = moveStepsPos(i, axis, val, wrap)

@@ -27,8 +27,23 @@ function mapGridNotes(scale)
 end
 
 function parameters.init(animator)
+  local hasMoveTarget = {[2] = true, [3] = true}
+
   for i=1,4 do
-    params:set_action(i .. 'lfo', function(v) if v == 1 then animator.original = {} end end)
+    params:set_action(i .. 'lfo',
+      function(v)
+        if v == 1 then
+          local hasMove = false
+          for j=1,4 do
+            if j ~= i and hasMoveTarget[params:get(j .. 'lfo_target')] and params:get(j .. 'lfo') == 2 then
+              hasMove = true
+            end
+          end
+
+          if not hasMove then animator.original = {} end
+        end
+      end
+    )
   end
   params:add_number('tempo', 'tempo', 20, 999, 120)
   params:set_action('tempo', function(v) animator.clock.time = 60 / v end)
