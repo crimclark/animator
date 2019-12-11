@@ -2,6 +2,7 @@ local constants = include('lib/constants')
 local helpers = include('lib/helpers')
 local parameters = include('lib/parameters')
 local Sequencer = include('lib/Sequencer')
+local ui = include('lib/ui')
 local lfo = include('lib/lfo')
 local MusicUtil = require 'musicutil'
 local findPosition = helpers.findPosition
@@ -115,11 +116,7 @@ function count()
 end
 
 function redraw()
-  screen.clear()
-  screen.aa(1)
-  screenDrawSteps()
-  screen.fill()
-  screen.update()
+  ui.redraw(getStepLevels())
 end
 
 function key(n, z) end
@@ -347,19 +344,6 @@ function getStepLevels()
     end
   end
   return levels
-end
-
-function screenDrawSteps()
-  local findXY = helpers.findXY
-  for pos,level in pairs(getStepLevels()) do
-    local step = findXY(pos)
-    local padding = 4
-    screen.level(level)
-    screen.rect(step.x+(padding*step.x) - padding, step.y+(padding*step.y) - padding, 3, 3)
-    screen.fill()
-    screen.stroke()
-    screen.update()
-  end
 end
 
 function gridDraw()
