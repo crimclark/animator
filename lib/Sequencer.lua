@@ -21,8 +21,6 @@ function Sequencer.new(options)
 --    intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
     div = 1,
     divCount = 1,
---    startX = math.min(options.steps[1].x, options.steps[#options.steps].x)
---    startX = options.steps[1].x
   }
 
   setmetatable(seq, Sequencer)

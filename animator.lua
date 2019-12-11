@@ -33,20 +33,25 @@ function copyTable(tbl)
   return copy
 end
 
--- http://lua-users.org/wiki/CopyTable
-function deepcopy(orig)
-  local orig_type = type(orig)
-  local copy
-  if orig_type == 'table' then
-    copy = {}
-    for orig_key, orig_value in next, orig, nil do
-      copy[deepcopy(orig_key)] = deepcopy(orig_value)
+-- https://stackoverflow.com/questions/640642/how-do-you-copy-a-lua-table-by-value
+local function deepcopy(o, seen)
+  seen = seen or {}
+  if o == nil then return nil end
+  if seen[o] then return seen[o] end
+
+  local no
+  if type(o) == 'table' then
+    no = {}
+    seen[o] = no
+
+    for k, v in next, o, nil do
+      no[deepcopy(k, seen)] = deepcopy(v, seen)
     end
---    setmetatable(copy, deepcopy(getmetatable(orig)))
+    setmetatable(no, deepcopy(getmetatable(o), seen))
   else -- number, string, boolean, etc
-    copy = orig
+    no = o
   end
-  return copy
+  return no
 end
 
 function initStepState()
@@ -164,7 +169,7 @@ function count()
     noteOn(note, numToFreq(note), random(127)/127)
   end
 
-  local function delayNote()
+  local function delayNote(note)
     local delay = metroInit()
     delay.event = function()
       playNote(note)
@@ -194,7 +199,7 @@ function count()
     if #seqs > 1 then note = note + 12 end
 
     if slop > 0 then
-      delayNote(slop)
+      delayNote(note)
     else
       playNote(note)
     end
