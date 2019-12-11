@@ -19,6 +19,7 @@ local state = {
 }
 local sequencers = {}
 local clk = metro.init()
+local delay = metro.init()
 engine.name = "MollyThePoly"
 
 local animator = {}
@@ -156,6 +157,10 @@ function count()
   local noteOn = engine.noteOn
   local numToFreq = MusicUtil.note_num_to_freq
 
+  local function playNote(note)
+    noteOn(note, numToFreq(note), math.random(127)/127)
+  end
+
   for i=1,#sequencers do
     local seq = sequencers[i]
     seq.index = seq.index % seq.length + 1
@@ -173,11 +178,17 @@ function count()
   for pos,seqs in pairs(play) do
     local note = animator.notes[pos]
     if #seqs > 1 then note = note + 12 end
-    noteOn(note, numToFreq(note), math.random(127)/127)
+    delay.event = function() playNote(note) end
+    delay.time = math.random(30)/100
+    delay.count = 1
+    delay:start()
+
+--     noteOn(note, numToFreq(note), math.random(127)/127)
   end
   gridDraw()
   redraw()
 end
+
 
 function redraw()
   screen.clear()
