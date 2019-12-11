@@ -156,9 +156,23 @@ function count()
   local findPos = findPosition
   local noteOn = engine.noteOn
   local numToFreq = MusicUtil.note_num_to_freq
+  local random = math.random
+  local slop = params:get('slop')
+  local metroInit = metro.init
 
   local function playNote(note)
-    noteOn(note, numToFreq(note), math.random(127)/127)
+    noteOn(note, numToFreq(note), random(127)/127)
+  end
+
+  local function delayNote()
+    local delay = metroInit()
+    delay.event = function()
+      playNote(note)
+      metro.free(delay.id)
+    end
+    delay.time = random(slop)/100
+    delay.count = 1
+    delay:start()
   end
 
   for i=1,#sequencers do
@@ -179,20 +193,11 @@ function count()
     local note = animator.notes[pos]
     if #seqs > 1 then note = note + 12 end
 
-    if params:get('slop') > 0 then
-      local delay = metro.init()
-      delay.event = function()
-        playNote(note)
-        metro.free(delay.id)
-      end
-      delay.time = math.random(params:get('slop'))/100
-      delay.count = 1
-      delay:start()
+    if slop > 0 then
+      delayNote(slop)
     else
       playNote(note)
     end
-
---     noteOn(note, numToFreq(note), math.random(127)/127)
   end
   gridDraw()
   redraw()
