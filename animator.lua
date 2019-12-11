@@ -19,7 +19,6 @@ local state = {
 }
 local sequencers = {}
 local clk = metro.init()
-local delay = metro.init()
 engine.name = "MollyThePoly"
 
 local animator = {}
@@ -178,10 +177,19 @@ function count()
   for pos,seqs in pairs(play) do
     local note = animator.notes[pos]
     if #seqs > 1 then note = note + 12 end
-    delay.event = function() playNote(note) end
-    delay.time = math.random(30)/100
-    delay.count = 1
-    delay:start()
+
+    if params:get('slop') > 0 then
+      local delay = metro.init()
+      delay.event = function()
+        playNote(note)
+        metro.free(delay.id)
+      end
+      delay.time = math.random(params:get('slop'))/100
+      delay.count = 1
+      delay:start()
+    else
+      playNote(note)
+    end
 
 --     noteOn(note, numToFreq(note), math.random(127)/127)
   end
