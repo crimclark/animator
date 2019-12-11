@@ -25,7 +25,7 @@ engine.name = "MollyThePoly"
 local animator = {}
 animator.clock = clk
 animator.original = {}
-animator.drawAll = function()
+animator.draw = function()
   gridDraw()
   redraw()
 end
@@ -60,7 +60,7 @@ function init()
   clk.event = count
   g.key = gridKey
   clk:start()
-  redraw()
+  animator.draw()
 end
 
 function count()
@@ -111,8 +111,7 @@ function count()
       playNote(note)
     end
   end
-  gridDraw()
-  redraw()
+  animator.draw()
 end
 
 function redraw()
@@ -202,12 +201,10 @@ end
 function enc(n, delta)
   if n == 2 then
     moveSequencers('y', delta, HEIGHT)
-    gridDraw()
-    redraw()
+    animator.draw()
   elseif n == 3 then
     moveSequencers('x', delta, LENGTH)
-    gridDraw()
-    redraw()
+    animator.draw()
   end
 end
 
@@ -236,8 +233,7 @@ function handleNavSelect(y)
     end
 
     setToSnapshot(snapshots[y])
-    gridDraw()
-    redraw()
+    animator.draw()
   end
 end
 
@@ -262,8 +258,7 @@ function handleOverlap(pos, posHeld, index)
 
   if (pos == first and posHeld == last) or (posHeld == first and pos == last) then
     clearSeq(index)
-    gridDraw()
-    redraw()
+    animator.draw()
     screen.clear()
   end
 end
@@ -289,8 +284,7 @@ function mainSeqGridHandler(x, y)
     toggleStepOn(x, y)
     state.held = {x = x, y = y}
   end
-  gridDraw()
-  redraw()
+  animator.draw()
   screen.clear()
 end
 
