@@ -86,18 +86,18 @@ local prevVal = 0
 local lfoHandlers = {}
 lfoHandlers[2] = function(i) handleMoveLFO(i, 'x', LENGTH, handleMoveSeqsLFO) end
 lfoHandlers[3] = function(i) handleMoveLFO(i, 'y', HEIGHT, handleMoveSeqsLFO) end
-lfoHandlers[4] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
-  handleMoveStepsLFO(1, axis, val, wrap)
-end) end
-lfoHandlers[5] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
-  handleMoveStepsLFO(1, axis, val, wrap)
-end) end
-lfoHandlers[6] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
-  handleMoveStepsLFO(2, axis, val, wrap)
-end) end
-lfoHandlers[7] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
-  handleMoveStepsLFO(2, axis, val, wrap)
-end) end
+-- lfoHandlers[4] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
+--   handleMoveStepsLFO(1, axis, val, wrap)
+-- end) end
+-- lfoHandlers[5] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
+--   handleMoveStepsLFO(1, axis, val, wrap)
+-- end) end
+-- lfoHandlers[6] = function(i) handleMoveLFO(i, 'x', LENGTH, function(axis, val, wrap)
+--   handleMoveStepsLFO(2, axis, val, wrap)
+-- end) end
+-- lfoHandlers[7] = function(i) handleMoveLFO(i, 'y', HEIGHT, function(axis, val, wrap)
+--   handleMoveStepsLFO(2, axis, val, wrap)
+-- end) end
 
 function lfo.process()
   local floor = math.floor
@@ -118,11 +118,12 @@ function handleMoveSeqsLFO(axis, val, wrap)
     moveSequencersPos(axis, val, wrap)
 end
 
-function handleMoveStepsLFO(index, axis, val, wrap)
-  local newOn = moveStepsPos(index, axis, val, wrap)
--- cant do this here
-  refreshOn(newOn)
-end
+-- function handleMoveStepsLFO(index, axis, val, wrap)
+--   moveSingleSequencer(index, axis, val, wrap)
+-- --   local newOn = moveStepsPos(index, axis, val, wrap)
+-- -- -- cant do this here
+-- --   refreshOn(newOn)
+-- end
 
 function handleMoveLFO(index, axis, wrap, callback)
   local val = 1
@@ -273,7 +274,7 @@ function moveSequencersPos(axis, val, wrap)
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
   for pos,n in pairs(on) do
-    if newOn[pos] ~= nil then
+    if newOn[pos] == 1 then
       on[pos] = enabled[pos]
     else
       on[pos] = 0
@@ -281,17 +282,71 @@ function moveSequencersPos(axis, val, wrap)
   end
 end
 
-function refreshOn(newOn)
-  for pos,n in pairs(newOn) do
-    print(n)
-    on[pos] = on[pos] + n
-    if n == 1 then
-      on[pos] = enabled[pos]
-    else
-      on[pos] = on[pos] - 1
-    end
-  end
-end
+-- function getCurrentOn()
+--   local current = {}
+--   for i=1,#sequencers do
+--     local steps = sequencers[i].steps
+--     for j=1,#steps do
+--       local step = steps[j]
+--       local pos = findPosition(step.x, step.y)
+--       if on[pos] > 0 then current[pos] = 1 end
+--     end
+--   end
+--   return current
+-- end
+--
+-- function resetEnabled()
+--   local current = initStepState()
+--   for i=1,#sequencers do
+--     local steps = sequencers[i].steps
+--     for j=1,#steps do
+--       local step = steps[j]
+--       local pos = findPosition(step.x, step.y)
+--       current[pos] = current[pos] + 1
+--     end
+--   end
+--   enabled = current
+-- end
+
+-- function moveSingleSequencer(index, axis, val, wrap)
+--   local newOn = getCurrentOn()
+--   local resp = moveStepsPos(index, axis, val, wrap)
+--   for pos,n in pairs(resp) do
+--     if newOn[pos] then
+--       newOn[pos] = newOn[pos] + n
+--     else
+--       newOn[pos] = n
+--     end
+--   end
+--   sequencers[index]:regenStepMap()
+-- --   resetEnabled()
+--   for pos,n in pairs(on) do
+--     if newOn[pos] ~= nil and newOn[pos] >= 1 then
+--       on[pos] = enabled[pos]
+--     else
+--       on[pos] = 0
+--     end
+--   end
+-- --
+-- --   for pos,n in pairs(on) do
+-- --     if newOn[pos] == 1 then
+-- --       on[pos] = enabled[pos]
+-- --     else
+-- --       on[pos] = 0
+-- --     end
+-- --   end
+-- end
+
+-- function refreshOn(newOn)
+--   for pos,n in pairs(newOn) do
+--     on[pos] = on[pos] + n
+--     if n == 1 then
+--       on[pos] = enabled[pos]
+--     else
+--       on[pos] = on[pos] - 1
+--     end
+--   end
+-- end
 
 function enc(n, delta)
   if n == 2 then
