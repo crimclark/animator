@@ -45,27 +45,13 @@ function updateOnState(steps)
   end
 end
 
-function animator.createNewSequence(x, y)
-  local steps = getNewLineSteps(animator.grid.held, {x = x, y = y})
-  if steps ~= nil then
-    table.insert(animator.sequencers, 1, Sequencer.new{steps = steps})
-    if #animator.sequencers > MAX_SEQ_NUM then
-      animator.sequencers[MAX_SEQ_NUM+1] = nil
-    end
-    updateEnabled(steps)
-    updateOnState(steps)
-    -- should this be here?
---    state.held = {x = x, y = y}
+function animator.addNewSequence(steps)
+  table.insert(animator.sequencers, 1, Sequencer.new{steps = steps})
+  if #animator.sequencers > MAX_SEQ_NUM then
+    animator.sequencers[MAX_SEQ_NUM+1] = nil
   end
-end
-
-function animator.toggleStepOn(x, y)
-  local pos = findPosition(x, y)
-  if animator.on[pos] > 0 then
-    animator.on[pos] = 0
-  elseif animator.enabled[pos] > 0 then
-    animator.on[pos] = animator.enabled[pos]
-  end
+  updateEnabled(steps)
+  updateOnState(steps)
 end
 
 local Snapshot = {}
@@ -199,7 +185,7 @@ function animator.moveSequencersPos(axis, val, wrap)
     animator.sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
-  for pos,n in pairs(animator.on) do
+  for pos,_ in pairs(animator.on) do
     if newOn[pos] == 1 then
       animator.on[pos] = animator.enabled[pos]
     else
@@ -208,25 +194,12 @@ function animator.moveSequencersPos(axis, val, wrap)
   end
 end
 
-function animator.handleNavSelect(x, y, z)
-  if y >= 1 and y <= 4 then
-    if animator.grid:isClearHeld() then
-      if animator.grid.snapshot == y then animator.grid.snapshot = 0 end
-      animator.snapshots[y] = nil
-    else
-      animator.grid.snapshot = y
-
-      if animator.snapshots[y] == nil then
-        animator.snapshots[y] = Snapshot.new(animator)
-      end
-
-      setToSnapshot(animator.snapshots[y])
-    end
-
-    animator.redraw()
-  elseif y == 6 then
-    animator.grid:setHeld(x, y)
+function animator.createNewSnapshot(i)
+  if animator.snapshots[i] == nil then
+    animator.snapshots[i] = Snapshot.new(animator)
   end
+
+  setToSnapshot(animatow.snapshots[i])
 end
 
 function setToSnapshot(snapshot)
@@ -239,6 +212,7 @@ function animator.clearSeq(index)
   clearStepState(animator.sequencers[index].steps)
   clearOnState(animator.sequencers[index].steps)
   table.remove(animator.sequencers, index)
+  animator.redraw()
 end
 
 function animator.resetStepLevels()
@@ -297,67 +271,3 @@ function clearOnState(steps)
     end
   end
 end
-
-function getNewLineSteps(a, b)
-  if a.x == b.x and a.y == b.y then return end
-  if a.y == b.y then
-    return getStepsHorizontal(a, b)
-  elseif a.x == b.x then
-    return getStepsVertical(a, b)
-  elseif math.abs(a.x - b.x) == math.abs(a.y - b.y) then
-    return getStepsDiagonal(a, b)
-  end
-end
-
-function getStepsHorizontal(a, b)
-  local steps = {}
-  if a.x < b.x then
-    for i = a.x, b.x do
-      steps[#steps+1] = {x = i, y = a.y}
-    end
-    return steps
-  else
-    for i = a.x, b.x, -1 do
-      steps[#steps+1] = {x = i, y = a.y}
-    end
-    return steps
-  end
-end
-
-function getStepsVertical(a, b)
-  local steps = {}
-  if a.y < b.y then
-    for i = a.y, b.y do
-      steps[#steps+1] = {x = a.x, y = i}
-    end
-  else
-    for i = a.y, b.y, -1 do
-      steps[#steps+1] = {x = a.x, y = i}
-    end
-  end
-  return steps
-end
-
-function getStepsDiagonal(a, b)
-  local steps = {}
-  local y = a.y
-
-  local function addStep(x)
-    steps[#steps+1] = {x = x, y = y}
-    if a.y > b.y then
-      y = y - 1
-    else
-      y = y + 1
-    end
-  end
-
-  if a.x < b.x then
-    for i = a.x,b.x do addStep(i) end
-  else
-    for i = a.x,b.x,-1 do addStep(i) end
-  end
-
-  return steps
-end
-
-return animator
