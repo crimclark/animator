@@ -7,6 +7,7 @@ local deepcopy = helpers.deepcopy
 local Sequencer = include('lib/Sequencer')
 local MusicUtil = require 'musicutil'
 local GRID_LEVELS = {DIM = 3, LOW_MED = 5, MED = 8, HIGH = 14}
+local MAX_SEQ_NUM = 8
 local clock = metro.init()
 
 function initStepState()
@@ -47,7 +48,10 @@ end
 function animator.createNewSequence(x, y)
   local steps = getNewLineSteps(animator.grid.held, {x = x, y = y})
   if steps ~= nil then
-    animator.sequencers[#animator.sequencers+1] = Sequencer.new{steps = steps}
+    table.insert(animator.sequencers, 1, Sequencer.new{steps = steps})
+    if #animator.sequencers > MAX_SEQ_NUM then
+      animator.sequencers[MAX_SEQ_NUM+1] = nil
+    end
     updateEnabled(steps)
     updateOnState(steps)
     -- should this be here?
