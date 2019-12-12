@@ -75,6 +75,8 @@ function Snapshot.new(animator)
   return snapshot
 end
 
+local maxNotes = 6
+
 function animator.count()
   local play = {}
   local findPos = findPosition
@@ -113,14 +115,18 @@ function animator.count()
     end
   end
 
+  local notesPlayed = 0
   for pos,seqs in pairs(play) do
-    local note = animator.notes[pos]
-    if #seqs > 1 then note = note + 12 end
+    if notesPlayed < maxNotes then
+      local note = animator.notes[pos]
+      if #seqs > 1 then note = note + 12 end
 
-    if slop > 0 then
-      delayNote(note)
-    else
-      playNote(note)
+      if slop > 0 then
+        delayNote(note)
+      else
+        playNote(note)
+      end
+      notesPlayed = notesPlayed+1
     end
   end
   animator.redraw()
