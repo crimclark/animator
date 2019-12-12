@@ -5,8 +5,6 @@ local lfo = {}
 
 function createProcess(handlers)
   return function()
-    local floor = math.floor
-
     for i=1,LFO_NUM do
       local target = params:get(i .. 'lfo_target')
 

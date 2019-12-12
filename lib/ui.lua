@@ -10,7 +10,7 @@ end
 
 function redrawSteps(levels)
   local findXY = helpers.findXY
-  local level, rect, fill, stroke, update = screen.level, screen.rect, screen.fill, screen.stroke, screen.update
+  local level, rect, fill, stroke = screen.level, screen.rect, screen.fill, screen.stroke
 
   for pos,val in pairs(levels) do
     local step = findXY(pos)

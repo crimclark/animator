@@ -1,11 +1,9 @@
 local constants = include('lib/constants')
 local parameters = include('lib/parameters')
-local Sequencer = include('lib/Sequencer')
 local animator = include('lib/animator')
 local ui = include('lib/ui')
 local GRID = include('lib/Grid')
 local lfo = include('lib/lfo')
-local MusicUtil = require 'musicutil'
 local g = grid.connect()
 engine.name = 'MollyThePoly'
 
