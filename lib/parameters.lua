@@ -51,7 +51,9 @@ function parameters.init(animator)
   params:add_option('scale', 'scale', {'major', 'minor'}, 2)
   params:set_action('scale', function(scale) animator.notes = mapGridNotes(scale) end)
 
-  params:add_number('slop', 'slop', 0, 50, 0)
+  params:add_number('slop', 'slop', 0, 500, 0)
+
+  params:add_number('max_notes', 'max notes', 1, 10, 6)
 
   MollyThePoly.add_params()
   params:set('env_2_decay', 0.2)

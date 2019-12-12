@@ -75,8 +75,6 @@ function Snapshot.new(animator)
   return snapshot
 end
 
-local maxNotes = 6
-
 function animator.count()
   local play = {}
   local findPos = findPosition
@@ -96,7 +94,7 @@ function animator.count()
       playNote(note)
       metro.free(delay.id)
     end
-    delay.time = random(slop)/100
+    delay.time = random(slop)/1000
     delay.count = 1
     delay:start()
   end
@@ -115,20 +113,21 @@ function animator.count()
     end
   end
 
+  local maxNotes = params:get('max_notes')
   local notesPlayed = 0
   for pos,seqs in pairs(play) do
-    if notesPlayed < maxNotes then
-      local note = animator.notes[pos]
-      if #seqs > 1 then note = note + 12 end
+    local note = animator.notes[pos]
+    if #seqs > 1 then note = note + 12 end
 
-      if slop > 0 then
-        delayNote(note)
-      else
-        playNote(note)
-      end
-      notesPlayed = notesPlayed+1
+    if slop > 0 then
+      delayNote(note)
+    else
+      playNote(note)
     end
+    notesPlayed = notesPlayed+1
+    if notesPlayed == maxNotes then break end
   end
+
   animator.redraw()
 end
 
