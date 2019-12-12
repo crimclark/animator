@@ -3,7 +3,6 @@ local ui = {}
 
 function ui.redraw(levels)
   screen.clear()
-  screen.aa(1)
   redrawSteps(levels)
   screen.fill()
   screen.update()
@@ -20,7 +19,6 @@ function redrawSteps(levels)
     rect(step.x+(padding*step.x) - padding, step.y+(padding*step.y) - padding, 3, 3)
     fill()
     stroke()
-    update()
   end
 end
 
