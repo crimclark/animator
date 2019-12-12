@@ -3,7 +3,7 @@ local helpers = include('lib/helpers')
 local parameters = include('lib/parameters')
 local Sequencer = include('lib/Sequencer')
 local ui = include('lib/ui')
-local GRID = include('lib/grid')
+local GRID = include('lib/Grid')
 local lfo = include('lib/lfo')
 local MusicUtil = require 'musicutil'
 local findPosition = helpers.findPosition
@@ -16,25 +16,11 @@ local g = grid.connect()
 local GRID_LEVELS = {DIM = 3, LOW_MED = 5, MED = 8, HIGH = 14}
 local SNAPSHOT_NUM = 4
 local SEQ_NUM = 8
-local state = {
-  held = nil,
-  selectedSnapshot = 0,
-}
 local sequencers = {}
 local clk = metro.init()
 engine.name = "MollyThePoly"
 
 local animator = {}
-animator.clock = clk
-animator.original = {}
-animator.stepLevels = {}
-animator.draw = function()
-  animator.stepLevels = getStepLevels()
-  GRID:redraw(animator.stepLevels)
-  redraw()
-end
-
-local snapshots = {}
 
 function initStepState()
   local steps = {}
@@ -42,8 +28,58 @@ function initStepState()
   return steps
 end
 
-local on = initStepState()
-local enabled = initStepState()
+function updateEnabled(steps)
+  for i=1,#steps do
+    local step = steps[i]
+    local pos = findPosition(step.x, step.y)
+    animator.enabled[pos] = animator.enabled[pos] + 1
+  end
+end
+
+function updateOnState(steps)
+  for i=1,#steps do
+    local step = steps[i]
+    local pos = findPosition(step.x, step.y)
+    if animator.on[pos] > 0 then
+      animator.on[pos] = animator.enabled[pos]
+    end
+  end
+end
+
+function createNewSequence(x, y)
+  local steps = getNewLineSteps(animator.grid.held, {x = x, y = y})
+  if steps ~= nil then
+    animator.sequencers[#animator.sequencers+1] = Sequencer.new{steps = steps}
+    updateEnabled(steps)
+    updateOnState(steps)
+    -- should this be here?
+--    state.held = {x = x, y = y}
+  end
+end
+
+function toggleStepOn(x, y)
+  local pos = findPosition(x, y)
+  if animator.on[pos] > 0 then
+    animator.on[pos] = 0
+  elseif animator.enabled[pos] > 0 then
+    animator.on[pos] = animator.enabled[pos]
+  end
+end
+
+animator.clock = clk
+animator.original = {}
+animator.stepLevels = {}
+animator.draw = function()
+  animator.stepLevels = getStepLevels()
+  animator.grid:redraw(animator.stepLevels)
+  redraw()
+end
+animator.on = initStepState()
+animator.enabled = initStepState()
+animator.sequencers = sequencers
+animator.createNewSequence = createNewSequence
+animator.toggleStepOn = toggleStepOn
+animator.snapshots = {}
 
 local Snapshot = {}
 
@@ -62,7 +98,8 @@ function init()
   lfo.init(animator)
   parameters.init(animator)
   clk.event = count
-  g.key = gridKey
+  animator.grid = GRID.new(animator)
+  g.key = animator.grid:createKeyHandler()
   clk:start()
   animator.draw()
 end
@@ -91,12 +128,12 @@ function count()
     delay:start()
   end
 
-  for i=1,#sequencers do
-    local seq = sequencers[i]
+  for i=1,#animator.sequencers do
+    local seq = animator.sequencers[i]
     seq.index = seq.index % seq.length + 1
     local currentStep = seq.steps[seq.index]
     local pos = findPos(currentStep.x, currentStep.y)
-    if on[pos] > 0 then
+    if animator.on[pos] > 0 then
       if play[pos] == nil then
         play[pos] = {seq.ID}
       else
@@ -117,12 +154,6 @@ function count()
   end
   animator.draw()
 end
---
--- function createRedraw(levels)
---   return function()
---     ui.redraw(levels)
---   end
--- end
 
 function redraw()
   ui.redraw(animator.stepLevels)
@@ -138,7 +169,7 @@ function moveSteps(steps, axis, delta, wrap)
     local step = steps[i]
     local pos = findPosition(step.x, step.y)
     step[axis] = (step[axis] + delta - 1) % wrap + 1
-    if on[pos] > 0 then
+    if animator.on[pos] > 0 then
       newOn[findPosition(step.x, step.y)] = 1
     end
   end
@@ -148,7 +179,7 @@ function moveSteps(steps, axis, delta, wrap)
 end
 
 function moveStepsPos(index, axis, val, wrap)
-  local steps = sequencers[index].steps
+  local steps = animator.sequencers[index].steps
   clearStepState(steps)
   local newOn = {}
 
@@ -161,7 +192,7 @@ function moveStepsPos(index, axis, val, wrap)
     local step = steps[i]
     local pos = findPos(step.x, step.y)
     step[axis] = (originalSteps[i][axis] + val - 1) % wrap + 1
-    if on[pos] > 0 then
+    if animator.on[pos] > 0 then
       newOn[pos] = -1
       newOn[findPos(step.x, step.y)] = 1
     end
@@ -173,16 +204,16 @@ end
 
 function moveSequencers(axis, delta, wrap)
   local newOn = {}
-  for i=1,#sequencers do
-    local resp = moveSteps(sequencers[i].steps, axis, delta, wrap)
-    sequencers[i]:regenStepMap()
+  for i=1,#animator.sequencers do
+    local resp = moveSteps(animator.sequencers[i].steps, axis, delta, wrap)
+    animator.sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
-  for pos,n in pairs(on) do
+  for pos,n in pairs(animator.on) do
     if newOn[pos] ~= nil then
-      on[pos] = enabled[pos]
+      animator.on[pos] = animator.enabled[pos]
     else
-      on[pos] = 0
+      animator.on[pos] = 0
     end
   end
 end
@@ -190,16 +221,16 @@ end
 
 function animator.moveSequencersPos(axis, val, wrap)
   local newOn = {}
-  for i=1,#sequencers do
+  for i=1,#animator.sequencers do
     local resp = moveStepsPos(i, axis, val, wrap)
-    sequencers[i]:regenStepMap()
+    animator.sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
-  for pos,n in pairs(on) do
+  for pos,n in pairs(animator.on) do
     if newOn[pos] == 1 then
-      on[pos] = enabled[pos]
+      animator.on[pos] = animator.enabled[pos]
     else
-      on[pos] = 0
+      animator.on[pos] = 0
     end
   end
 end
@@ -214,124 +245,43 @@ function enc(n, delta)
   end
 end
 
-function gridKey(x, y, z)
-  if z == 1 then
-    handleGridKeyDown(x, y)
-  else
-    state.held = nil
-  end
-end
-
-function handleGridKeyDown(x, y)
-  if x <= LENGTH then
-    mainSeqGridHandler(x, y)
-  elseif x == NAV_COL then
-    handleNavSelect(y)
-  end
-end
-
-function handleNavSelect(y)
+function animator.handleNavSelect(y)
   if y >= 1 and y <= 4 then
-    GRID.snapshot = y
+    animator.grid.snapshot = y
 
-    if snapshots[y] == nil then
-      snapshots[y] = Snapshot.new{on = on, enabled = enabled, sequencers = sequencers}
+    if animator.snapshots[y] == nil then
+      animator.snapshots[y] = Snapshot.new{on = animator.on, enabled = animator.enabled, sequencers = animator.sequencers}
     end
 
-    setToSnapshot(snapshots[y])
+    setToSnapshot(animator.snapshots[y])
     animator.draw()
   end
 end
 
 function setToSnapshot(snapshot)
-  on = copyTable(snapshot.on)
-  enabled = copyTable(snapshot.enabled)
-  sequencers = deepcopy(snapshot.sequencers)
+  animator.on = copyTable(snapshot.on)
+  animator.enabled = copyTable(snapshot.enabled)
+  animator.sequencers = deepcopy(snapshot.sequencers)
 end
 
-function findOverlapIndex(posA, posB)
-  for i=1,#sequencers do
-    local stepMap = sequencers[i].stepMap
-    if stepMap[posA] and stepMap[posB] then return i end
-  end
-end
-
-function handleOverlap(pos, posHeld, index)
-  local seq = sequencers[index]
-  local steps = sequencers[index].steps
-  local first = findPosition(steps[1].x, steps[1].y)
-  local last = findPosition(steps[seq.length].x, steps[seq.length].y)
-
-  if (pos == first and posHeld == last) or (posHeld == first and pos == last) then
-    clearSeq(index)
-    animator.draw()
-    screen.clear()
-  end
-end
-
-function mainSeqGridHandler(x, y)
-  local held = state.held
-  local posHeld
-  if held ~= nil then
-    posHeld = findPosition(held.x, held.y)
-  end
-  local pos = findPosition(x, y)
-
-  if posHeld ~= nil then
-    if enabled[posHeld] > 0 and enabled[pos] > 0 then
-      local overlapIndex = findOverlapIndex(pos, posHeld)
-      if overlapIndex ~= nil then
-        return handleOverlap(pos, posHeld, overlapIndex)
-      end
-    end
-
-    createNewSequence(x, y)
-  else
-    toggleStepOn(x, y)
-    state.held = {x = x, y = y}
-  end
-  animator.draw()
-  screen.clear()
-end
-
-function toggleStepOn(x, y)
-  local pos = findPosition(x, y)
-  if on[pos] > 0 then
-    on[pos] = 0
-  elseif enabled[pos] > 0 then
-    on[pos] = enabled[pos]
-  end
-end
-
-function createNewSequence(x, y)
-  local steps = getNewLineSteps(state.held, {x = x, y = y})
-  if steps ~= nil then
-    sequencers[#sequencers+1] = Sequencer.new{steps = steps}
-    updateEnabled(steps)
-    updateOnState(steps)
-    -- should this be here?
---    state.held = {x = x, y = y}
-  end
-end
-
-function clearSeq(index)
-  clearStepState(sequencers[index].steps)
-  clearOnState(sequencers[index].steps)
-  table.remove(sequencers, index)
+function animator.clearSeq(index)
+  clearStepState(animator.sequencers[index].steps)
+  clearOnState(animator.sequencers[index].steps)
+  table.remove(animator.sequencers, index)
 end
 
 function getStepLevels()
   local levels = {}
   local findPos = findPosition
   local max = math.max
-  for i=1,#sequencers do
-    local seq = sequencers[i]
+  for i=1,#animator.sequencers do
+    local seq = animator.sequencers[i]
     local steps = seq.steps
     for i=1,#steps do
       local step = steps[i]
       local pos = findPos(step.x, step.y)
       -- step activated
-      if on[pos] > 0 then
+      if animator.on[pos] > 0 then
         if i == seq.index then
           levels[pos] = GRID_LEVELS.HIGH
         else
@@ -355,29 +305,11 @@ function getStepLevels()
   return levels
 end
 
-function updateEnabled(steps)
-  for i=1,#steps do
-    local step = steps[i]
-    local pos = findPosition(step.x, step.y)
-    enabled[pos] = enabled[pos] + 1
-  end
-end
-
-function updateOnState(steps)
-  for i=1,#steps do
-    local step = steps[i]
-    local pos = findPosition(step.x, step.y)
-    if on[pos] > 0 then
-      on[pos] = enabled[pos]
-    end
-  end
-end
-
 function clearStepState(steps)
   for i=1,#steps do
     local step = steps[i]
     local pos = findPosition(step.x, step.y)
-    enabled[pos] = enabled[pos] - 1
+    animator.enabled[pos] = animator.enabled[pos] - 1
   end
 end
 
@@ -385,8 +317,8 @@ function clearOnState(steps)
   for i=1,#steps do
     local step = steps[i]
     local pos = findPosition(step.x, step.y)
-    if on[pos] > 0 then
-      on[pos] = on[pos] - 1
+    if animator.on[pos] > 0 then
+      animator.on[pos] = animator.on[pos] - 1
     end
   end
 end
