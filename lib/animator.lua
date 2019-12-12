@@ -1,12 +1,12 @@
 local constants = include('lib/constants')
 local STEP_NUM = constants.GRID_HEIGHT*constants.GRID_LENGTH
+local GRID_LEVELS = constants.GRID_LEVELS
 local helpers = include('lib/helpers')
 local findPosition = helpers.findPosition
 local copyTable = helpers.copyTable
 local deepcopy = helpers.deepcopy
 local Sequencer = include('lib/Sequencer')
 local MusicUtil = require 'musicutil'
-local GRID_LEVELS = {DIM = 3, LOW_MED = 5, MED = 8, HIGH = 14}
 local MAX_SEQ_NUM = 8
 local clock = metro.init()
 

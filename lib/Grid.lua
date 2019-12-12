@@ -1,10 +1,10 @@
 local constants = require 'animator/lib/constants'
 local LENGTH = constants.GRID_LENGTH
 local NAV_COL = constants.GRID_NAV_COL
+local GRID_LEVELS = constants.GRID_LEVELS
 local helpers = require 'animator/lib/helpers'
 local SNAPSHOT_NUM = 4
 local g = grid.connect()
-local GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14 }
 local CLEAR_POSITION = 6
 
 local GRID = {}
