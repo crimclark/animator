@@ -39,11 +39,15 @@ function GRID:_key(x, y, z)
   end
 end
 
-function GRID:keyDown(x, y)
+function GRID:isClearHeld()
+  return self.held and self.held.x == 16 and self.held.y == 6
+end
+
+function GRID:keyDown(x, y, z)
   if x <= LENGTH then
     self:handleSequence(x, y)
   elseif x == NAV_COL then
-    self.animator.handleNavSelect(y)
+    self.animator.handleNavSelect(x, y, z)
   end
 end
 
@@ -66,9 +70,13 @@ function GRID:handleSequence(x, y)
     self.animator.createNewSequence(x, y)
   else
     self.animator.toggleStepOn(x, y)
-    self.held = {x = x, y = y}
+    self:setHeld(x, y)
   end
   self.animator.redraw()
+end
+
+function GRID:setHeld(x, y)
+  self.held = {x = x, y = y}
 end
 
 function GRID:findOverlapIndex(posA, posB)
@@ -106,6 +114,9 @@ function redrawRightCol(snapshot)
       g:led(NAV_COL, i, GRID_LEVELS.LOW_MED)
     end
   end
+
+  g:led(NAV_COL, SNAPSHOT_NUM+2, GRID_LEVELS.LOW_MED)
+  g:led(NAV_COL, SNAPSHOT_NUM+4, GRID_LEVELS.LOW_MED)
 end
 
 return GRID

@@ -199,16 +199,24 @@ function animator.moveSequencersPos(axis, val, wrap)
   end
 end
 
-function animator.handleNavSelect(y)
+function animator.handleNavSelect(x, y, z)
   if y >= 1 and y <= 4 then
-    animator.grid.snapshot = y
+    if animator.grid:isClearHeld() then
+      if animator.grid.snapshot == y then animator.grid.snapshot = 0 end
+      animator.snapshots[y] = nil
+    else
+      animator.grid.snapshot = y
 
-    if animator.snapshots[y] == nil then
-      animator.snapshots[y] = Snapshot.new(animator)
+      if animator.snapshots[y] == nil then
+        animator.snapshots[y] = Snapshot.new(animator)
+      end
+
+      setToSnapshot(animator.snapshots[y])
     end
 
-    setToSnapshot(animator.snapshots[y])
     animator.redraw()
+  elseif y == 6 then
+    animator.grid:setHeld(x, y)
   end
 end
 
