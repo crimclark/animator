@@ -38,7 +38,7 @@ function createLfoHandlers(animator)
     end
 
     animator.moveSequencersPos(axis, val, wrap)
-    animator.draw()
+    animator.redraw()
   end
 
   local handlers = {}

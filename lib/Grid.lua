@@ -68,7 +68,7 @@ function GRID:handleSequence(x, y)
     self.animator.toggleStepOn(x, y)
     self.held = {x = x, y = y}
   end
-  self.animator.draw()
+  self.animator.redraw()
 end
 
 function GRID:findOverlapIndex(posA, posB)
@@ -86,7 +86,7 @@ function GRID:handleOverlap(pos, posHeld, index)
 
   if (pos == first and posHeld == last) or (posHeld == first and pos == last) then
     self.animator.clearSeq(index)
-    self.animator.draw()
+    self.animator.redraw()
   end
 end
 
