@@ -3,6 +3,7 @@ local helpers = include('lib/helpers')
 local parameters = include('lib/parameters')
 local Sequencer = include('lib/Sequencer')
 local ui = include('lib/ui')
+local GRID = include('lib/grid')
 local lfo = include('lib/lfo')
 local MusicUtil = require 'musicutil'
 local findPosition = helpers.findPosition
@@ -26,8 +27,10 @@ engine.name = "MollyThePoly"
 local animator = {}
 animator.clock = clk
 animator.original = {}
+animator.stepLevels = {}
 animator.draw = function()
-  gridDraw()
+  animator.stepLevels = getStepLevels()
+  GRID:redraw(animator.stepLevels)
   redraw()
 end
 
@@ -114,9 +117,15 @@ function count()
   end
   animator.draw()
 end
+--
+-- function createRedraw(levels)
+--   return function()
+--     ui.redraw(levels)
+--   end
+-- end
 
 function redraw()
-  ui.redraw(getStepLevels())
+  ui.redraw(animator.stepLevels)
 end
 
 function key(n, z) end
@@ -223,7 +232,7 @@ end
 
 function handleNavSelect(y)
   if y >= 1 and y <= 4 then
-    state.selectedSnapshot = y
+    GRID.snapshot = y
 
     if snapshots[y] == nil then
       snapshots[y] = Snapshot.new{on = on, enabled = enabled, sequencers = sequencers}
@@ -344,24 +353,6 @@ function getStepLevels()
     end
   end
   return levels
-end
-
-function gridDraw()
-  g:all(0)
-  local findXY = helpers.findXY
-  for pos,level in pairs(getStepLevels()) do
-    local step = findXY(pos)
-    g:led(step.x, step.y, level)
-  end
-
-  for i=1,SNAPSHOT_NUM do
-    if state.selectedSnapshot == i then
-      g:led(NAV_COL, i, GRID_LEVELS.HIGH)
-    else
-      g:led(NAV_COL, i, GRID_LEVELS.LOW_MED)
-    end
-  end
-  g:refresh()
 end
 
 function updateEnabled(steps)
