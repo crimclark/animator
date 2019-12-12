@@ -83,11 +83,11 @@ animator.snapshots = {}
 
 local Snapshot = {}
 
-function Snapshot.new(options)
+function Snapshot.new(animator)
   local snapshot = {
-    sequencers = options.sequencers,
-    on = options.on,
-    enabled = options.enabled,
+    sequencers = animator.sequencers,
+    on = animator.on,
+    enabled = animator.enabled,
   }
 
   return snapshot
@@ -250,7 +250,7 @@ function animator.handleNavSelect(y)
     animator.grid.snapshot = y
 
     if animator.snapshots[y] == nil then
-      animator.snapshots[y] = Snapshot.new{on = animator.on, enabled = animator.enabled, sequencers = animator.sequencers}
+      animator.snapshots[y] = Snapshot.new(animator)
     end
 
     setToSnapshot(animator.snapshots[y])
