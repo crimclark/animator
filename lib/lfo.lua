@@ -1,6 +1,6 @@
 local constants = include('lib/constants')
 local hnds = include('lib/hnds')
-local LFO_NUM = 4
+local LFO_NUM = constants.LFO_NUM
 local lfo = {}
 
 function createProcess(handlers)

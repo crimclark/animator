@@ -29,7 +29,7 @@ end
 function parameters.init(animator)
   local hasMoveTarget = {[2] = true, [3] = true}
 
-  for i=1,4 do
+  for i=1,constants.LFO_NUM do
     params:set_action(i .. 'lfo',
       function(v)
         if v == 1 then
