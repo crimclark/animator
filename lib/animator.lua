@@ -7,8 +7,8 @@ local copyTable = helpers.copyTable
 local deepcopy = helpers.deepcopy
 local Sequencer = include('lib/Sequencer')
 local MusicUtil = require 'musicutil'
+local BeatClock = require 'beatclock'
 local MAX_SEQ_NUM = 8
-local clock = metro.init()
 
 function initStepState()
   local steps = {}
@@ -18,7 +18,7 @@ end
 
 local animator = {}
 
-animator.clock = clock
+animator.clock = BeatClock.new()
 animator.original = {}
 animator.stepLevels = {}
 animator.redraw = function() end

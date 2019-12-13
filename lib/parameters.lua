@@ -45,8 +45,12 @@ function parameters.init(animator)
       end
     )
   end
-  params:add_number('tempo', 'tempo', 20, 999, 120)
-  params:set_action('tempo', function(v) animator.clock.time = 60 / v end)
+--  params:add_number('tempo', 'tempo', 20, 999, 120)
+--  params:set_action('tempo', function(v)
+--    animator.clock.time = 60 / v
+--  end)
+  animator.clock:add_clock_params()
+  params:set('bpm', 90)
 
   params:add_option('scale', 'scale', {'major', 'minor'}, 2)
   params:set_action('scale', function(scale) animator.notes = mapGridNotes(scale) end)
