@@ -199,7 +199,7 @@ function animator.createNewSnapshot(i)
     animator.snapshots[i] = Snapshot.new(animator)
   end
 
-  setToSnapshot(animatow.snapshots[i])
+  setToSnapshot(animator.snapshots[i])
 end
 
 function setToSnapshot(snapshot)
@@ -271,3 +271,5 @@ function clearOnState(steps)
     end
   end
 end
+
+return animator

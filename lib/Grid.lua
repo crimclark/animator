@@ -1,4 +1,4 @@
-local constants = require 'animator/lib/constants'
+local constants = include('animator/lib/constants')
 local LENGTH = constants.GRID_LENGTH
 local NAV_COL = constants.GRID_NAV_COL
 local GRID_LEVELS = constants.GRID_LEVELS
@@ -82,7 +82,7 @@ function GRID:handleSequence(x, y)
       end
     end
 
-    GRID:createNewSequence(x, y)
+    self:createNewSequence(x, y)
   else
     self:toggleStepOn(x, y)
     self:setHeld(x, y)

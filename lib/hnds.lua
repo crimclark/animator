@@ -90,7 +90,7 @@ function lfo.init()
   lfo_metro.count = -1
   lfo_metro.event = function()
     for i = 1, number_of_outputs do
-      if params:get(i .. "lfo") ~= 1 then
+      if params:get(i .. "lfo") == 2 then
         local slope
         if lfo[i].waveform == "sine" then
           slope = make_sine(i)
