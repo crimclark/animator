@@ -56,6 +56,11 @@ function parameters.init(animator)
   for i=1,8 do
     params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', {'octave', 'mute', 'reset all', 'reset self', 'reset other'}, 1)
     params:add_number('seq' .. i .. 'div', 'seq ' .. i .. ' clock div', 1, 8, 1)
+    params:set_action('seq' .. i .. 'div', function(v)
+      if animator.sequencers[i] then
+        animator.sequencers[i].div = v
+      end
+    end)
     params:add_separator()
   end
 

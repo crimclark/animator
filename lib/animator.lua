@@ -27,6 +27,7 @@ animator.enabled = initStepState()
 animator.sequencers = {}
 animator.snapshots = {}
 animator.resetAll = false
+animator.lastReplaced = 0
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -47,9 +48,12 @@ function updateOnState(steps)
 end
 
 function animator.addNewSequence(steps)
-  table.insert(animator.sequencers, 1, Sequencer.new{steps = steps})
-  if #animator.sequencers > MAX_SEQ_NUM then
-    animator.sequencers[MAX_SEQ_NUM+1] = nil
+  local seq = Sequencer.new{steps = steps}
+  if #animator.sequencers == MAX_SEQ_NUM then
+    animator.lastReplaced = animator.lastReplaced % MAX_SEQ_NUM + 1
+    animator.sequencers[animator.lastReplaced] = seq
+  else
+    animator.sequencers[#animator.sequencers+1] = seq
   end
   updateEnabled(steps)
   updateOnState(steps)
@@ -92,22 +96,25 @@ function animator.count()
 
   for i=1,#animator.sequencers do
     local seq = animator.sequencers[i]
-    seq.index = seq.index % seq.length + 1
-    if animator.resetAll then
-      seq.index = 1
-      animator.resetAll = false
-    end
-    if seq.reset then
-      seq.index = 1
-      seq.reset = false
-    end
-    local currentStep = seq.steps[seq.index]
-    local pos = findPos(currentStep.x, currentStep.y)
-    if animator.on[pos] > 0 then
-      if play[pos] == nil then
-        play[pos] = {seq}
-      else
-        play[pos][#play[pos]+1] = seq
+    seq.divCount = seq.divCount % params:get('seq' .. i .. 'div') + 1
+    if seq.divCount == 1 then
+      seq.index = seq.index % seq.length + 1
+      if animator.resetAll then
+        seq.index = 1
+        animator.resetAll = false
+      end
+      if seq.reset then
+        seq.index = 1
+        seq.reset = false
+      end
+      local currentStep = seq.steps[seq.index]
+      local pos = findPos(currentStep.x, currentStep.y)
+      if animator.on[pos] > 0 then
+        if play[pos] == nil then
+          play[pos] = {seq}
+        else
+          play[pos][#play[pos]+1] = seq
+        end
       end
     end
   end
