@@ -102,7 +102,6 @@ function animator.count()
       seq.index = seq.index % seq.length + 1
       if animator.resetAll then
         seq.index = 1
-        animator.resetAll = false
       end
       if seq.reset then
         seq.index = 1
@@ -120,6 +119,8 @@ function animator.count()
     end
   end
 
+  if animator.resetAll then animator.resetAll = false end
+
   local maxNotes = params:get('max_notes')
   local noteCount = 0
   local notesPlayed = {}
@@ -127,10 +128,22 @@ function animator.count()
   for pos,seqs in pairs(play) do
     local note = animator.notes[pos]
     local mute = false
-    if #seqs > 1 then
---       mute = true
---       animator.resetAll = true
-      note = note + 12
+    local seqNum = #seqs
+    if seqNum > 1 then
+      for i=1,seqNum do
+        local intersect = seqs[i].intersect
+        if intersect == 'octave' then
+          note = note + 12
+        elseif intersect == 'mute' then
+          mute = true
+        elseif intersect == 'reset self' then
+          seqs[i].reset = true
+        elseif intersect == 'reset others' then
+          for j=1,seqNum do if j~= i then seqs[j].reset = true end end
+        elseif intersect == 'reset all' then
+          animator.resetAll = true
+        end
+      end
     end
 
     if not mute and not notesPlayed[note] then

@@ -18,7 +18,7 @@ function Sequencer.new(options)
     stepMap = createStepMap(options.steps),
     index = 1,
     length = #options.steps,
---    intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
+    intersect = params:get('seq' .. options.index .. 'intersect'),
     div = params:get('seq' .. options.index .. 'div'),
     divCount = 1,
     reset = false,
