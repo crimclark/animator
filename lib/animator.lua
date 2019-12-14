@@ -48,13 +48,14 @@ function updateOnState(steps)
 end
 
 function animator.addNewSequence(steps)
-  local seq = Sequencer.new{steps = steps}
+  local index
   if #animator.sequencers == MAX_SEQ_NUM then
     animator.lastReplaced = animator.lastReplaced % MAX_SEQ_NUM + 1
-    animator.sequencers[animator.lastReplaced] = seq
+    index = animator.lastReplaced
   else
-    animator.sequencers[#animator.sequencers+1] = seq
+    index = #animator.sequencers+1
   end
+  animator.sequencers[index] = Sequencer.new{steps = steps, index = index}
   updateEnabled(steps)
   updateOnState(steps)
 end
@@ -96,7 +97,7 @@ function animator.count()
 
   for i=1,#animator.sequencers do
     local seq = animator.sequencers[i]
-    seq.divCount = seq.divCount % params:get('seq' .. i .. 'div') + 1
+    seq.divCount = seq.divCount % seq.div + 1
     if seq.divCount == 1 then
       seq.index = seq.index % seq.length + 1
       if animator.resetAll then

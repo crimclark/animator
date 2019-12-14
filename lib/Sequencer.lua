@@ -19,7 +19,7 @@ function Sequencer.new(options)
     index = 1,
     length = #options.steps,
 --    intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
-    div = 1,
+    div = params:get('seq' .. options.index .. 'div'),
     divCount = 1,
     reset = false,
   }
