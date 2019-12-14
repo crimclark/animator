@@ -26,6 +26,7 @@ animator.on = initStepState()
 animator.enabled = initStepState()
 animator.sequencers = {}
 animator.snapshots = {}
+animator.resetAll = false
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -92,30 +93,48 @@ function animator.count()
   for i=1,#animator.sequencers do
     local seq = animator.sequencers[i]
     seq.index = seq.index % seq.length + 1
+    if animator.resetAll then
+      seq.index = 1
+      animator.resetAll = false
+    end
+    if seq.reset then
+      seq.index = 1
+      seq.reset = false
+    end
     local currentStep = seq.steps[seq.index]
     local pos = findPos(currentStep.x, currentStep.y)
     if animator.on[pos] > 0 then
       if play[pos] == nil then
-        play[pos] = {seq.ID}
+        play[pos] = {seq}
       else
-        play[pos][#play[pos]+1] = seq.ID
+        play[pos][#play[pos]+1] = seq
       end
     end
   end
 
   local maxNotes = params:get('max_notes')
-  local notesPlayed = 0
+  local noteCount = 0
+  local notesPlayed = {}
+
   for pos,seqs in pairs(play) do
     local note = animator.notes[pos]
-    if #seqs > 1 then note = note + 12 end
-
-    if slop > 0 then
-      delayNote(note)
-    else
-      playNote(note)
+    local mute = false
+    if #seqs > 1 then
+--       mute = true
+--       animator.resetAll = true
+      note = note + 12
     end
-    notesPlayed = notesPlayed+1
-    if notesPlayed == maxNotes then break end
+
+    if not mute and not notesPlayed[note] then
+      if slop > 0 then
+        delayNote(note)
+      else
+        playNote(note)
+      end
+      notesPlayed[note] = true
+      noteCount = noteCount+1
+      if noteCount == maxNotes then break end
+    end
   end
 
   animator.redraw()

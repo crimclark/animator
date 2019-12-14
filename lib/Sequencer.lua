@@ -21,6 +21,7 @@ function Sequencer.new(options)
 --    intersect = {MUTE, OCTAVE, RESET, RESET_GLOBAL},
     div = 1,
     divCount = 1,
+    reset = false,
   }
 
   setmetatable(seq, Sequencer)

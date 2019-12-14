@@ -13,7 +13,6 @@ function init()
   parameters.init(animator)
   animator.grid = GRID.new(animator)
   g.key = animator.grid:createKeyHandler()
---  animator.clock.event = animator.count
   animator.clock.on_step = animator.count
   animator.clock:start()
   animator.redraw()

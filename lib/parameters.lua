@@ -45,19 +45,27 @@ function parameters.init(animator)
       end
     )
   end
---  params:add_number('tempo', 'tempo', 20, 999, 120)
---  params:set_action('tempo', function(v)
---    animator.clock.time = 60 / v
---  end)
+
+
+  params:add_separator()
   animator.clock:add_clock_params()
-  params:set('bpm', 90)
+  params:set('bpm', 80)
+
+  params:add_separator()
+
+  for i=1,8 do
+    params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', {'octave', 'mute', 'reset all', 'reset self', 'reset other'}, 1)
+    params:add_number('seq' .. i .. 'div', 'seq ' .. i .. ' clock div', 1, 8, 1)
+    params:add_separator()
+  end
+
+  params:add_separator()
 
   params:add_option('scale', 'scale', {'major', 'minor'}, 2)
   params:set_action('scale', function(scale) animator.notes = mapGridNotes(scale) end)
-
   params:add_number('slop', 'slop', 0, 500, 0)
-
   params:add_number('max_notes', 'max notes', 1, 10, 6)
+  params:add_separator()
 
   MollyThePoly.add_params()
   params:set('env_2_decay', 0.2)
@@ -66,7 +74,7 @@ function parameters.init(animator)
   params:set('osc_wave_shape', 1)
   params:set('noise_level', 0)
   params:set('chorus_mix', 0)
-  hs.init()
+--   hs.init()
 end
 
 return parameters
