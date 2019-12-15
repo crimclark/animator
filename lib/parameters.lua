@@ -1,4 +1,5 @@
 local constants = include('animator/lib/constants')
+local INTERSECT_OPS = constants.INTERSECT_OPS
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
 local MusicUtil = require "musicutil"
 local hs = include("awake/lib/halfsecond")
@@ -53,13 +54,12 @@ function parameters.init(animator)
 
   params:add_separator()
 
-  local intersectOptions = {'none', 'octave', 'mute', 'reset self', 'reset others', 'reset all'}
 
   for i=1,8 do
-    params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', intersectOptions, 1)
+    params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', INTERSECT_OPS, 1)
     params:set_action('seq' .. i .. 'intersect', function(v)
       if animator.sequencers[i] then
-        animator.sequencers[i].intersect = intersectOptions[v]
+        animator.sequencers[i].intersect = v
       end
     end)
 

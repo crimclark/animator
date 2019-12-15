@@ -1,6 +1,7 @@
 local constants = include('lib/constants')
 local STEP_NUM = constants.GRID_HEIGHT*constants.GRID_LENGTH
 local GRID_LEVELS = constants.GRID_LEVELS
+local INTERSECT_OPS = constants.INTERSECT_OPS
 local helpers = include('lib/helpers')
 local findPosition = helpers.findPosition
 local copyTable = helpers.copyTable
@@ -131,16 +132,16 @@ function animator.count()
     local seqNum = #seqs
     if seqNum > 1 then
       for i=1,seqNum do
-        local intersect = seqs[i].intersect
-        if intersect == 'octave' then
+        local intersect = INTERSECT_OPS[seqs[i].intersect]
+        if intersect == constants.INTERSECT_OP_OCTAVE then
           note = note + 12
-        elseif intersect == 'mute' then
+        elseif intersect == constants.INTERSECT_OP_MUTE then
           mute = true
-        elseif intersect == 'reset self' then
+        elseif intersect == constants.INTERSECT_OP_RESET_SELF then
           seqs[i].reset = true
-        elseif intersect == 'reset others' then
+        elseif intersect == constants.INTERSECT_OP_RESET_OTHER then
           for j=1,seqNum do if j~= i then seqs[j].reset = true end end
-        elseif intersect == 'reset all' then
+        elseif intersect == constants.INTERSECT_OP_RESET_ALL then
           animator.resetAll = true
         end
       end
