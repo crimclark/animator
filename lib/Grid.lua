@@ -42,7 +42,7 @@ end
 
 function GRID:redrawOptions()
   g:all(0)
-  drawOptionsRow()
+  drawOptions()
   g:led(NAV_COL, TOGGLE_VIEW_POSITION, GRID_LEVELS.LOW_MED)
   g:refresh()
 end
@@ -78,6 +78,16 @@ end
 function GRID:optionsKeyDown(x, y)
   if x == NAV_COL and y == TOGGLE_VIEW_POSITION then
     self:toggleView()
+  elseif x >= 1 and x <= #constants.INTERSECT_OPS then
+    local intersectID = 'seq' .. y .. 'intersect'
+    local selected = x + 1
+    if params:get(intersectID) == selected then
+      params:set(intersectID, 1)
+    else
+      params:set(intersectID, selected)
+    end
+
+    self:redraw()
   elseif x >= DIV_START then
     params:set('seq' .. y .. 'div', x - DIV_START + 1)
     self:redraw()
@@ -171,15 +181,24 @@ function GRID:handleOverlap(pos, posHeld, index)
   end
 end
 
-function drawOptionsRow()
+function drawOptions()
+  local function drawOption(x, y, isOn)
+    if isOn then
+      g:led(x, y, GRID_LEVELS.HIGH)
+    else
+      g:led(x, y, GRID_LEVELS.LOW_MED)
+    end
+  end
+
   for y=1,HEIGHT do
+    for x=1,#constants.INTERSECT_OPS - 1 do
+      local intersect = params:get('seq' .. y .. 'intersect')
+      drawOption(x, y, intersect == x + 1)
+    end
+
     for x=DIV_START,LENGTH do
       local div = params:get('seq' .. y .. 'div')
-      if div == x - DIV_START + 1 then
-        g:led(x, y, GRID_LEVELS.MED)
-      else
-        g:led(x, y, GRID_LEVELS.LOW_MED)
-      end
+      drawOption(x, y, div == x - DIV_START + 1)
     end
   end
 end
