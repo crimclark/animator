@@ -1,11 +1,14 @@
 local constants = include('animator/lib/constants')
 local LENGTH = constants.GRID_LENGTH
+local HEIGHT = constants.GRID_HEIGHT
 local NAV_COL = constants.GRID_NAV_COL
 local GRID_LEVELS = constants.GRID_LEVELS
 local helpers = require 'animator/lib/helpers'
 local SNAPSHOT_NUM = 4
 local g = grid.connect()
 local CLEAR_POSITION = 6
+local TOGGLE_VIEW_POSITION = HEIGHT
+local DIV_START = LENGTH - 7
 
 local GRID = {}
 GRID.__index = GRID
@@ -15,36 +18,69 @@ function GRID.new(animator)
     snapshot = 0,
     held = nil,
     animator = animator,
+    view = 1,
   }
   setmetatable(g, GRID)
   setmetatable(g, {__index = GRID})
+
+  g.viewKeyHandlers = {g.mainKeyHandler, g.optionsKeyHandler}
+  g.viewRedraws = {g.redrawMain, g.redrawOptions}
   return g
 end
 
-function GRID:redraw(levels)
+
+function GRID:redraw()
+  self.viewRedraws[self.view](self)
+end
+
+function GRID:redrawMain()
   g:all(0)
-  drawSteps(levels)
+  drawSteps(self.animator.stepLevels)
   redrawRightCol(self.snapshot)
   g:refresh()
 end
 
-function GRID:createKeyHandler()
-  return function(x, y, z) self:_key(x, y, z) end
+function GRID:redrawOptions()
+  g:all(0)
+  drawOptionsRow()
+  g:led(NAV_COL, TOGGLE_VIEW_POSITION, GRID_LEVELS.LOW_MED)
+  g:refresh()
 end
 
-function GRID:_key(x, y, z)
+function GRID:createKeyHandler()
+  return function(x, y, z)
+    self.viewKeyHandlers[self.view](self, x, y, z)
+  end
+end
+
+function GRID:mainKeyHandler(x, y, z)
   if z == 1 then
-    self:keyDown(x, y)
+    self:mainKeyDown(x, y)
   else
     self.held = nil
   end
 end
 
-function GRID:keyDown(x, y)
+function GRID:optionsKeyHandler(x, y, z)
+  if z == 1 then
+    self:optionsKeyDown(x, y)
+  end
+end
+
+function GRID:mainKeyDown(x, y)
   if x <= LENGTH then
     self:handleSequence(x, y)
   elseif x == NAV_COL then
     self:handleRightColSelect(x, y)
+  end
+end
+
+function GRID:optionsKeyDown(x, y)
+  if x == NAV_COL and y == TOGGLE_VIEW_POSITION then
+    self:toggleView()
+  elseif x >= DIV_START then
+    params:set('seq' .. y .. 'div', x - DIV_START + 1)
+    self:redraw()
   end
 end
 
@@ -63,7 +99,14 @@ function GRID:handleRightColSelect(x, y)
     animator.redraw()
   elseif y == CLEAR_POSITION then
     self:setHeld(x, y)
+  elseif y == TOGGLE_VIEW_POSITION then
+    self:toggleView()
   end
+end
+
+function GRID:toggleView()
+  self.view = self.view % #self.viewRedraws + 1
+  self.animator.redraw()
 end
 
 function GRID:handleSequence(x, y)
@@ -128,6 +171,19 @@ function GRID:handleOverlap(pos, posHeld, index)
   end
 end
 
+function drawOptionsRow()
+  for y=1,HEIGHT do
+    for x=DIV_START,LENGTH do
+      local div = params:get('seq' .. y .. 'div')
+      if div == x - DIV_START + 1 then
+        g:led(x, y, GRID_LEVELS.MED)
+      else
+        g:led(x, y, GRID_LEVELS.LOW_MED)
+      end
+    end
+  end
+end
+
 function drawSteps(levels)
   local findXY = helpers.findXY
   for pos,level in pairs(levels) do
@@ -145,8 +201,8 @@ function redrawRightCol(snapshot)
     end
   end
 
-  g:led(NAV_COL, SNAPSHOT_NUM+2, GRID_LEVELS.LOW_MED)
-  g:led(NAV_COL, SNAPSHOT_NUM+4, GRID_LEVELS.LOW_MED)
+  g:led(NAV_COL, CLEAR_POSITION, GRID_LEVELS.LOW_MED)
+  g:led(NAV_COL, TOGGLE_VIEW_POSITION, GRID_LEVELS.LOW_MED)
 end
 
 function getNewLineSteps(a, b)

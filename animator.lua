@@ -20,7 +20,7 @@ end
 
 function animator.redraw()
   animator.resetStepLevels()
-  animator.grid:redraw(animator.stepLevels)
+  animator.grid:redraw()
   redraw()
 end
 
