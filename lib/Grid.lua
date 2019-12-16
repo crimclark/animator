@@ -9,6 +9,7 @@ local g = grid.connect()
 local CLEAR_POSITION = 6
 local TOGGLE_VIEW_POSITION = HEIGHT
 local DIV_START = LENGTH - 7
+local INTERSECT_START = 2
 
 local GRID = {}
 GRID.__index = GRID
@@ -78,15 +79,13 @@ end
 function GRID:optionsKeyDown(x, y)
   if x == NAV_COL and y == TOGGLE_VIEW_POSITION then
     self:toggleView()
-  elseif x >= 1 and x <= #constants.INTERSECT_OPS then
+  elseif x >= INTERSECT_START and x <= #constants.INTERSECT_OPS then
     local intersectID = 'seq' .. y .. 'intersect'
-    local selected = x + 1
-    if params:get(intersectID) == selected then
+    if params:get(intersectID) == x then
       params:set(intersectID, 1)
     else
-      params:set(intersectID, selected)
+      params:set(intersectID, x)
     end
-
     self:redraw()
   elseif x >= DIV_START then
     params:set('seq' .. y .. 'div', x - DIV_START + 1)
@@ -191,9 +190,9 @@ function drawOptions()
   end
 
   for y=1,HEIGHT do
-    for x=1,#constants.INTERSECT_OPS - 1 do
+    for x=INTERSECT_START,#constants.INTERSECT_OPS do
       local intersect = params:get('seq' .. y .. 'intersect')
-      drawOption(x, y, intersect == x + 1)
+      drawOption(x, y, intersect == x)
     end
 
     for x=DIV_START,LENGTH do
