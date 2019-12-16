@@ -6,7 +6,7 @@ local GRID_LEVELS = constants.GRID_LEVELS
 local helpers = require 'animator/lib/helpers'
 local SNAPSHOT_NUM = 4
 local g = grid.connect()
-local CLEAR_POSITION = 6
+local CLEAR_POSITION = 5
 local TOGGLE_VIEW_POSITION = HEIGHT
 local DIV_START = LENGTH - 7
 local INTERSECT_START = 2
@@ -44,8 +44,12 @@ end
 function GRID:redrawOptions()
   g:all(0)
   drawOptions()
-  g:led(NAV_COL, TOGGLE_VIEW_POSITION, GRID_LEVELS.LOW_MED)
+  drawToggleViewPad()
   g:refresh()
+end
+
+function drawToggleViewPad()
+  g:led(NAV_COL, TOGGLE_VIEW_POSITION, GRID_LEVELS.DIM)
 end
 
 function GRID:createKeyHandler()
@@ -219,8 +223,8 @@ function redrawRightCol(snapshot)
     end
   end
 
-  g:led(NAV_COL, CLEAR_POSITION, GRID_LEVELS.LOW_MED)
-  g:led(NAV_COL, TOGGLE_VIEW_POSITION, GRID_LEVELS.LOW_MED)
+  g:led(NAV_COL, CLEAR_POSITION, GRID_LEVELS.DIM)
+  drawToggleViewPad()
 end
 
 function getNewLineSteps(a, b)
