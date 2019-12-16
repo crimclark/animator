@@ -4,23 +4,27 @@ local ui = {}
 function ui.redraw(levels)
   screen.clear()
   redrawSteps(levels)
-  screen.fill()
+  local textY = 60
+  screen.move(4, textY)
+  screen.level(5)
+  screen.text('reset')
+  screen.move(105, textY)
+  screen.text('clear')
   screen.update()
 end
 
 function redrawSteps(levels)
   local findXY = helpers.findXY
-  local level, rect, fill, stroke = screen.level, screen.rect, screen.fill, screen.stroke
+  local level, rect, fill = screen.level, screen.rect, screen.fill
+  local padding = 4
+  local marginLeft = 23
+  local marginTop = 4
 
   for pos,val in pairs(levels) do
     local step = findXY(pos)
-    local padding = 4
-    local marginLeft = 22
-    local marginTop = 4
     level(val)
     rect(step.x+(padding*step.x) + marginLeft, step.y+(padding*step.y) + marginTop, 3, 3)
     fill()
-    stroke()
   end
 end
 
