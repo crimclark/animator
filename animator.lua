@@ -19,9 +19,15 @@ function init()
 end
 
 function animator.redraw()
-  animator.resetStepLevels()
-  animator.grid:redraw()
-  redraw()
+  if animator.grid.view == 1 then
+    animator.resetStepLevels()
+    animator.grid:redraw()
+    redraw()
+  else
+    animator.setStepLevels(animator.sequencers[animator.grid.selected])
+    animator.grid:redraw()
+    redraw()
+  end
 end
 
 function redraw()

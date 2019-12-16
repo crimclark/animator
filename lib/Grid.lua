@@ -10,6 +10,7 @@ local CLEAR_POSITION = 5
 local TOGGLE_VIEW_POSITION = HEIGHT
 local DIV_START = LENGTH - 7
 local INTERSECT_START = 2
+local SELECT_POSITION = 1
 
 local GRID = {}
 GRID.__index = GRID
@@ -20,6 +21,7 @@ function GRID.new(animator)
     held = nil,
     animator = animator,
     view = 1,
+    selected = 1,
   }
   setmetatable(g, GRID)
   setmetatable(g, {__index = GRID})
@@ -43,7 +45,7 @@ end
 
 function GRID:redrawOptions()
   g:all(0)
-  drawOptions()
+  drawOptions(self.selected)
   drawToggleViewPad()
   g:refresh()
 end
@@ -94,6 +96,10 @@ function GRID:optionsKeyDown(x, y)
   elseif x >= DIV_START then
     params:set('seq' .. y .. 'div', x - DIV_START + 1)
     self:redraw()
+  elseif x == SELECT_POSITION then
+    self.selected = y
+--     self:redraw()
+    self.animator.redraw()
   end
 end
 
@@ -184,7 +190,7 @@ function GRID:handleOverlap(pos, posHeld, index)
   end
 end
 
-function drawOptions()
+function drawOptions(selected)
   local function drawOption(x, y, isOn)
     if isOn then
       g:led(x, y, GRID_LEVELS.HIGH)
@@ -192,6 +198,8 @@ function drawOptions()
       g:led(x, y, GRID_LEVELS.LOW_MED)
     end
   end
+
+  g:led(SELECT_POSITION, selected, GRID_LEVELS.HIGH)
 
   for y=1,HEIGHT do
     for x=INTERSECT_START,#constants.INTERSECT_OPS do

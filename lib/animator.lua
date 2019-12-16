@@ -260,37 +260,47 @@ function animator.resetStepLevels()
   animator.stepLevels = getStepLevels()
 end
 
-function getStepLevels()
-  local levels = {}
+function animator.setStepLevels(seq)
+  animator.stepLevels = seq and reduceStepLevels(seq) or {}
+end
+
+function reduceStepLevels(seq, levels)
+  levels = levels or {}
+  local steps = seq.steps
   local findPos = findPosition
   local max = math.max
-  for i=1,#animator.sequencers do
-    local seq = animator.sequencers[i]
-    local steps = seq.steps
-    for i=1,#steps do
-      local step = steps[i]
-      local pos = findPos(step.x, step.y)
-      -- step activated
-      if animator.on[pos] > 0 then
-        if i == seq.index then
-          levels[pos] = GRID_LEVELS.HIGH
-        else
-          levels[pos] = levels[pos] == nil
-                  and GRID_LEVELS.MED
-                  or max(levels[pos], GRID_LEVELS.MED)
-        end
-        -- step highlighted but not activated
-      elseif i == seq.index then
-        levels[pos] = levels[pos] == nil
-                and GRID_LEVELS.LOW_MED
-                or max(levels[pos], GRID_LEVELS.LOW_MED)
-        -- step not highlighted or activated
+  for i=1,#steps do
+    local step = steps[i]
+    local pos = findPos(step.x, step.y)
+    -- step activated
+    if animator.on[pos] > 0 then
+      if i == seq.index then
+        levels[pos] = GRID_LEVELS.HIGH
       else
         levels[pos] = levels[pos] == nil
-                and GRID_LEVELS.DIM
-                or max(levels[pos], GRID_LEVELS.DIM)
+                and GRID_LEVELS.MED
+                or max(levels[pos], GRID_LEVELS.MED)
       end
+      -- step highlighted but not activated
+    elseif i == seq.index then
+      levels[pos] = levels[pos] == nil
+              and GRID_LEVELS.LOW_MED
+              or max(levels[pos], GRID_LEVELS.LOW_MED)
+      -- step not highlighted or activated
+    else
+      levels[pos] = levels[pos] == nil
+              and GRID_LEVELS.DIM
+              or max(levels[pos], GRID_LEVELS.DIM)
     end
+  end
+
+  return levels
+end
+
+function getStepLevels()
+  local levels = {}
+  for i=1,#animator.sequencers do
+    reduceStepLevels(animator.sequencers[i], levels)
   end
   return levels
 end
@@ -308,7 +318,7 @@ function clearOnState(steps)
     local step = steps[i]
     local pos = findPosition(step.x, step.y)
     if animator.on[pos] > 0 then
-      animator.on[pos] = animator.on[pos] - 1
+      animator.on[pos] = animator.enabled[pos]
     end
   end
 end
