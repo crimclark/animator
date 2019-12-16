@@ -45,7 +45,7 @@ end
 
 function GRID:redrawOptions()
   g:all(0)
-  drawOptions(self.selected)
+  self:drawOptions(self.selected)
   drawToggleViewPad()
   g:refresh()
 end
@@ -190,7 +190,7 @@ function GRID:handleOverlap(pos, posHeld, index)
   end
 end
 
-function drawOptions(selected)
+function GRID:drawOptions(selected)
   local function drawOption(x, y, isOn)
     if isOn then
       g:led(x, y, GRID_LEVELS.HIGH)
@@ -200,15 +200,16 @@ function drawOptions(selected)
   end
 
   g:led(SELECT_POSITION, selected, GRID_LEVELS.HIGH)
+  local seqs = self.animator.sequencers
 
   for y=1,HEIGHT do
     for x=INTERSECT_START,#constants.INTERSECT_OPS do
-      local intersect = params:get('seq' .. y .. 'intersect')
+      local intersect = seqs[y] and seqs[y].intersect or params:get('seq' .. y .. 'intersect')
       drawOption(x, y, intersect == x)
     end
 
     for x=DIV_START,LENGTH do
-      local div = params:get('seq' .. y .. 'div')
+      local div = seqs[y] and seqs[y].div or params:get('seq' .. y .. 'div')
       drawOption(x, y, div == x - DIV_START + 1)
     end
   end

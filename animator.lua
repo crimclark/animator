@@ -34,7 +34,17 @@ function redraw()
   ui.redraw(animator.stepLevels)
 end
 
-function key(n, z) end
+function key(n, z)
+  if z == 1 then
+    if n == 2 then
+      animator.reset(animator.grid.view)
+      animator.redraw()
+    elseif n == 3 then
+      animator.clear(animator.grid.view)
+      animator.redraw()
+    end
+  end
+end
 
 function enc(n, delta)
   if n == 2 then

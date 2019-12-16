@@ -27,7 +27,7 @@ animator.on = initStepState()
 animator.enabled = initStepState()
 animator.sequencers = {}
 animator.snapshots = {}
-animator.resetAll = false
+animator.shouldResetAll = false
 animator.lastReplaced = 0
 
 function updateEnabled(steps)
@@ -101,7 +101,7 @@ function animator.count()
     seq.divCount = seq.divCount % seq.div + 1
     if seq.divCount == 1 then
       seq.index = seq.index % seq.length + 1
-      if animator.resetAll then
+      if animator.shouldResetAll then
         seq.index = 1
       end
       if seq.reset then
@@ -120,7 +120,7 @@ function animator.count()
     end
   end
 
-  if animator.resetAll then animator.resetAll = false end
+  if animator.shouldResetAll then animator.shouldResetAll = false end
 
   local maxNotes = params:get('max_notes')
   local noteCount = 0
@@ -142,7 +142,7 @@ function animator.count()
         elseif intersect == constants.INTERSECT_OP_RESET_OTHER then
           for j=1,seqNum do if j~= i then seqs[j].reset = true end end
         elseif intersect == constants.INTERSECT_OP_RESET_ALL then
-          animator.resetAll = true
+          animator.shouldResetAll = true
         end
       end
     end
@@ -253,7 +253,36 @@ function animator.clearSeq(index)
   clearStepState(animator.sequencers[index].steps)
   clearOnState(animator.sequencers[index].steps)
   table.remove(animator.sequencers, index)
+  if not animator.sequencers[index+1] then resetSeqParams(index+1) end
   animator.redraw()
+end
+
+function resetSeqParams(index)
+  params:set('seq' .. index .. 'div', 1)
+  params:set('seq' .. index .. 'intersect', 1)
+end
+
+function animator.clear(view)
+  if view == 1 then
+    animator.sequencers = {}
+    animator.snapshots = {}
+    animator.original = {}
+    animator.on = initStepState()
+    animator.enabled = initStepState()
+  else
+    animator.clearSeq(animator.grid.selected)
+  end
+end
+
+function animator.reset(view)
+  if view == 1 then
+    for i=1,#animator.sequencers do
+      animator.sequencers[i].divCount = 1
+      animator.sequencers[i].index = 1
+    end
+  else
+    animator.sequencers[animator.grid.selected].reset = true
+  end
 end
 
 function animator.resetStepLevels()
