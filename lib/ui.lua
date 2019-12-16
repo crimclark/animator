@@ -15,8 +15,10 @@ function redrawSteps(levels)
   for pos,val in pairs(levels) do
     local step = findXY(pos)
     local padding = 4
+    local marginLeft = 22
+    local marginTop = 4
     level(val)
-    rect(step.x+(padding*step.x) - padding, step.y+(padding*step.y) - padding, 3, 3)
+    rect(step.x+(padding*step.x) + marginLeft, step.y+(padding*step.y) + marginTop, 3, 3)
     fill()
     stroke()
   end
