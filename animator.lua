@@ -1,3 +1,27 @@
+-- Animator
+--
+-- -- | /
+--
+-- 2D Polyphonic Sequencer
+-- .....................................................
+--
+-- v1 by @crim
+--
+-- Full docs @ ____________
+--
+-- Hold 2 pads to draw a
+-- horizontal, vertical or
+-- diagonal sequence
+--
+-- Toggle the options page with
+-- the bottom right grid pad
+-- to change clock divisions
+-- and intersect behavior for
+-- each sequence.
+--
+-- E2 / E3 : move sequencers
+-- K2 / K3 : reset / clear
+
 local constants = include('lib/constants')
 local parameters = include('lib/parameters')
 local animator = include('lib/animator')
@@ -31,7 +55,7 @@ function animator.redraw()
 end
 
 function redraw()
-  ui.redraw(animator.stepLevels)
+  ui.redraw(animator.stepLevels, animator.grid, animator.showIntroText)
 end
 
 function key(n, z)

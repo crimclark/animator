@@ -29,6 +29,7 @@ animator.sequencers = {}
 animator.snapshots = {}
 animator.shouldResetAll = false
 animator.lastReplaced = 0
+animator.showIntroText = true
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -56,6 +57,7 @@ function animator.addNewSequence(steps)
   else
     index = #animator.sequencers+1
   end
+  if animator.showIntroText then animator.showIntroText = false end
   animator.sequencers[index] = Sequencer.new{steps = steps, index = index}
   updateEnabled(steps)
   updateOnState(steps)
