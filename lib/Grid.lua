@@ -84,18 +84,18 @@ end
 
 function GRID:optionsKeyDown(x, y)
   if x == NAV_COL and y == TOGGLE_VIEW_POSITION then
-    self:toggleView()
-  elseif x >= INTERSECT_START and x <= #constants.INTERSECT_OPS then
+    return self:toggleView()
+  end
+
+  if x >= INTERSECT_START and x <= #constants.INTERSECT_OPS then
     local intersectID = 'seq' .. y .. 'intersect'
     params:set(intersectID, params:get(intersectID) == x and 1 or x)
-    self:redraw()
   elseif x >= DIV_START then
     params:set('seq' .. y .. 'div', x - DIV_START + 1)
-    self:redraw()
-  elseif x == SELECT_POSITION then
-    self.selected = y
-    self.animator.redraw()
   end
+
+  self.selected = y
+  self.animator.redraw()
 end
 
 function GRID:handleRightColSelect(x, y)
