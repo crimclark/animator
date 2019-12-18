@@ -85,15 +85,15 @@ function animator.count()
   local slop = params:get('slop')
   local metroInit = metro.init
 
-  local function playNote(note)
-    animator.midiDevice:note_on(note, random(1, 127), animator.midiChannel)
+  local function playNote(note, channel)
+    animator.midiDevice:note_on(note, random(1, 127), channel)
     noteOn(note, numToFreq(note), random(127)/127)
   end
 
-  local function delayNote(note)
+  local function delayNote(note, channel)
     local delay = metroInit()
     delay.event = function()
-      playNote(note)
+      playNote(note, channel)
       metro.free(delay.id)
     end
     delay.time = random(slop)/1000
@@ -130,13 +130,18 @@ function animator.count()
   local maxNotes = params:get('max_notes')
   local noteCount = 0
   local notesPlayed = {}
+  local channelNotes = {}
 
   for pos,seqs in pairs(play) do
     local note = animator.notes[pos]
+    local channel = seqs[1].channel
+    local channelNotes = {}
+    channelNotes[channel] = note
     local mute = false
     local seqNum = #seqs
     if seqNum > 1 then
       for i=1,seqNum do
+        channelNotes[seqs[i].channel] = note
         local intersect = INTERSECT_OPS[seqs[i].intersect]
         if intersect == constants.INTERSECT_OP_OCTAVE then
           note = note + 12
@@ -152,15 +157,17 @@ function animator.count()
       end
     end
 
-    if not mute and not notesPlayed[note] then
-      if slop > 0 then
-        delayNote(note)
-      else
-        playNote(note)
+    for channel,note in pairs(channelNotes) do
+      if not mute and notesPlayed[note] ~= channel then
+        if slop > 0 then
+          delayNote(note, channel)
+        else
+          playNote(note, channel)
+        end
+        notesPlayed[note] = channel
+        noteCount = noteCount+1
+        if noteCount == maxNotes then break end
       end
-      notesPlayed[note] = true
-      noteCount = noteCount+1
-      if noteCount == maxNotes then break end
     end
   end
 

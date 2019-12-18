@@ -77,12 +77,12 @@ function parameters.init(animator)
       end
     end)
 
---     params:add_number('seq' .. i .. 'channel', 'seq ' .. i .. ' midi ch', 1, 16, 1)
---     params:set_action('seq' .. i .. 'channel', function(v)
---       if animator.sequencers[i] then
---         animator.sequencers[i].channel = v
---       end
---     end)
+    params:add_number('seq' .. i .. 'channel', 'seq ' .. i .. ' midi ch', 1, 16, 1)
+    params:set_action('seq' .. i .. 'channel', function(v)
+      if animator.sequencers[i] then
+        animator.sequencers[i].channel = v
+      end
+    end)
     params:add_separator()
   end
 
