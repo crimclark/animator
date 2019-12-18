@@ -39,6 +39,7 @@ function init()
   animator.midiDevice = midi.connect(1)
   g.key = animator.grid:createKeyHandler()
   animator.clock.on_step = animator.count
+  animator.noteOffMetro.event = animator.allNotesOff
   animator.clock:start()
   animator.redraw()
 end

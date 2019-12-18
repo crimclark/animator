@@ -20,6 +20,7 @@ end
 local animator = {}
 
 animator.clock = BeatClock.new()
+animator.noteOffMetro = metro.init()
 animator.original = {}
 animator.stepLevels = {}
 animator.redraw = function() end
@@ -32,6 +33,7 @@ animator.lastReplaced = 0
 animator.showIntroText = true
 animator.midiDevice = nil
 animator.midiChannel = nil
+animator.activeNotes = {}
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -76,7 +78,15 @@ function Snapshot.new(animator)
   return snapshot
 end
 
-  local a = 1
+-- todo: does each note need its own metro?
+function animator.allNotesOff()
+  for _,channelNote in pairs(animator.activeNotes) do
+    animator.midiDevice:note_off(channelNote.note, nil, channelNote.channel)
+    engine.noteOff(channelNote.note)
+  end
+  animator.activeNotes = {}
+end
+
 function animator.count()
   local play = {}
   local findPos = findPosition
@@ -89,6 +99,8 @@ function animator.count()
   local function playNote(note, channel)
     animator.midiDevice:note_on(note, random(1, 127), channel)
     noteOn(note, numToFreq(note), random(127)/127)
+    animator.activeNotes[#animator.activeNotes+1] = {channel = channel, note = note}
+    animator.noteOffMetro:start(params:get('note_length'), 1)
   end
 
   local function delayNote(note, channel)
@@ -167,7 +179,9 @@ function animator.count()
         end
         notesPlayed[note] = channel
         noteCount = noteCount+1
-        if noteCount == maxNotes then break end
+        if noteCount == maxNotes then
+          return animator.redraw()
+        end
       end
     end
   end

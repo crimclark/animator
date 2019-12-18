@@ -59,8 +59,8 @@ function parameters.init(animator)
   animator.clock:add_clock_params()
   params:set('bpm', 80)
 
+  params:add_control('note_length', 'note length', controlspec.new(0.01, 1, 'lin', 0.01, 0.01, ""))
   params:add_separator()
-
 
   for i=1,8 do
     params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', INTERSECT_OPS, 1)
