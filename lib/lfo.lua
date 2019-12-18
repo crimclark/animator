@@ -26,30 +26,26 @@ function setLfoTargets()
 end
 
 function createLfoHandlers(animator)
-  local function createHandler(index, axis, wrap)
-    local prev = 0
+  local handler  = function(index, axis, wrap)
+    local val = 0
 
-    return function()
-      local val = 0
+    if hnds[index].waveform == 'square' then
+      val = math.floor(hnds.scale(hnds[index].slope, -1, 1, 1, wrap)) - 1
+    else
+      val = math.floor(hnds[index].slope * wrap + 0.5)
+    end
 
-      if hnds[index].waveform == 'square' then
-        val = math.floor(hnds.scale(hnds[index].slope, -1, 1, 1, wrap)) - 1
-      else
-        val = math.floor(hnds[index].slope * wrap + 0.5)
-      end
-
-      if val ~= prev then
-        prev = val
-        animator.moveSequencersPos(axis, val, wrap)
-        animator.redraw()
-      end
+    if val ~= hnds[index].prev then
+      hnds[index].prev = val
+      animator.moveSequencersPos(axis, val, wrap)
+      animator.redraw()
     end
   end
 
   local handlers = {}
   handlers[1] = function() end
-  handlers[2] = function(i) createHandler(i, 'x', constants.GRID_LENGTH)() end
-  handlers[3] = function(i) createHandler(i, 'y', constants.GRID_HEIGHT)() end
+  handlers[2] = function(i) handler(i, 'x', constants.GRID_LENGTH) end
+  handlers[3] = function(i) handler(i, 'y', constants.GRID_HEIGHT) end
 
   return handlers
 end

@@ -76,6 +76,7 @@ function Snapshot.new(animator)
   return snapshot
 end
 
+  local a = 1
 function animator.count()
   local play = {}
   local findPos = findPosition
