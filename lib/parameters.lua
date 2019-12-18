@@ -28,6 +28,13 @@ function mapGridNotes(scale)
 end
 
 function parameters.init(animator)
+  params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
+  params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
+
+  params:add_number('midi_out_channel','midi out channel', 1, 16, 1)
+  -- todo: all notes off on switch channel
+  params:set_action('midi_out_channel', function(v) animator.midiChannel = v end)
+
   local hasMoveTarget = {[2] = true, [3] = true}
 
   for i=1,constants.LFO_NUM do
@@ -69,6 +76,13 @@ function parameters.init(animator)
         animator.sequencers[i].div = v
       end
     end)
+
+--     params:add_number('seq' .. i .. 'channel', 'seq ' .. i .. ' midi ch', 1, 16, 1)
+--     params:set_action('seq' .. i .. 'channel', function(v)
+--       if animator.sequencers[i] then
+--         animator.sequencers[i].channel = v
+--       end
+--     end)
     params:add_separator()
   end
 

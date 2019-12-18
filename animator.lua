@@ -36,6 +36,7 @@ function init()
   lfo.init(animator)
   parameters.init(animator)
   animator.grid = GRID.new(animator)
+  animator.midiDevice = midi.connect(1)
   g.key = animator.grid:createKeyHandler()
   animator.clock.on_step = animator.count
   animator.clock:start()

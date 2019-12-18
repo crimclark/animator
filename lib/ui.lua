@@ -29,12 +29,13 @@ end
 
 function drawIntroText()
     local x = 62
+    local y = 23
     screen.font_size(8)
-    screen.move(x, 23)
+    screen.move(x, y)
     screen.text_center('Hold 2 pads')
-    screen.move(x, 33)
+    screen.move(x, y+10)
     screen.text_center('-- | /')
-    screen.move(x, 43)
+    screen.move(x, y+20)
     screen.text_center('to draw a sequence')
     screen.update()
 end

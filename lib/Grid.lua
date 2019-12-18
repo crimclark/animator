@@ -87,18 +87,13 @@ function GRID:optionsKeyDown(x, y)
     self:toggleView()
   elseif x >= INTERSECT_START and x <= #constants.INTERSECT_OPS then
     local intersectID = 'seq' .. y .. 'intersect'
-    if params:get(intersectID) == x then
-      params:set(intersectID, 1)
-    else
-      params:set(intersectID, x)
-    end
+    params:set(intersectID, params:get(intersectID) == x and 1 or x)
     self:redraw()
   elseif x >= DIV_START then
     params:set('seq' .. y .. 'div', x - DIV_START + 1)
     self:redraw()
   elseif x == SELECT_POSITION then
     self.selected = y
---     self:redraw()
     self.animator.redraw()
   end
 end
@@ -192,11 +187,7 @@ end
 
 function GRID:drawOptions(selected)
   local function drawOption(x, y, isOn)
-    if isOn then
-      g:led(x, y, GRID_LEVELS.HIGH)
-    else
-      g:led(x, y, GRID_LEVELS.LOW_MED)
-    end
+    g:led(x, y, isOn and GRID_LEVELS.HIGH or GRID_LEVELS.LOW_MED)
   end
 
   g:led(SELECT_POSITION, selected, GRID_LEVELS.HIGH)
@@ -225,11 +216,7 @@ end
 
 function redrawRightCol(snapshot)
   for i=1,SNAPSHOT_NUM do
-    if snapshot == i then
-      g:led(NAV_COL, i, GRID_LEVELS.HIGH)
-    else
-      g:led(NAV_COL, i, GRID_LEVELS.LOW_MED)
-    end
+    g:led(NAV_COL, i, snapshot == i and GRID_LEVELS.HIGH or GRID_LEVELS.LOW_MED)
   end
 
   g:led(NAV_COL, CLEAR_POSITION, GRID_LEVELS.DIM)

@@ -30,6 +30,8 @@ animator.snapshots = {}
 animator.shouldResetAll = false
 animator.lastReplaced = 0
 animator.showIntroText = true
+animator.midiDevice = nil
+animator.midiChannel = nil
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -84,6 +86,7 @@ function animator.count()
   local metroInit = metro.init
 
   local function playNote(note)
+    animator.midiDevice:note_on(note, random(1, 127), animator.midiChannel)
     noteOn(note, numToFreq(note), random(127)/127)
   end
 
