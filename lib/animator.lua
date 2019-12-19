@@ -80,20 +80,25 @@ function animator.count()
   local play = {}
   local findPos = findPosition
   local noteOn = engine.noteOn
+  local noteOff = engine.noteOff
   local numToFreq = MusicUtil.note_num_to_freq
   local random = math.random
   local slop = params:get('slop')
+  local minVel = params:get('min_velocity')
+  local maxVel = params:get('max_velocity')
   local metroInit = metro.init
+  local metroFree = metro.free
 
   local function playNote(note, channel)
-    animator.midiDevice:note_on(note, random(1, 127), channel)
-    noteOn(note, numToFreq(note), random(127)/127)
+    local velocity = random(minVel, maxVel)
+    animator.midiDevice:note_on(note, velocity, channel)
+    noteOn(note, numToFreq(note), velocity/127)
 
     local noteOffMetro = metroInit()
     noteOffMetro.event = function()
       animator.midiDevice:note_off(note, nil, channel)
-      engine.noteOff(note)
-      metro.free(noteOffMetro.id)
+      noteOff(note)
+      metroFree(noteOffMetro.id)
     end
     noteOffMetro.time = params:get('note_length')
     noteOffMetro.count = 1
@@ -104,7 +109,7 @@ function animator.count()
     local delay = metroInit()
     delay.event = function()
       playNote(note, channel)
-      metro.free(delay.id)
+      metroFree(delay.id)
     end
     delay.time = random(slop)/1000
     delay.count = 1

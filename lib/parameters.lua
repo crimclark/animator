@@ -31,10 +31,6 @@ function parameters.init(animator)
   params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
   params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
 
-  params:add_number('midi_out_channel','midi out channel', 1, 16, 1)
-  -- todo: all notes off on switch channel
-  params:set_action('midi_out_channel', function(v) animator.midiChannel = v end)
-
   local hasMoveTarget = {[2] = true, [3] = true}
 
   for i=1,constants.LFO_NUM do
@@ -86,7 +82,13 @@ function parameters.init(animator)
     params:add_separator()
   end
 
-  params:add_separator()
+  params:add_number('max_velocity', 'max velocity', 1, 127, 127)
+  params:add_number('min_velocity', 'min velocity', 1, 127, 1)
+  params:set_action('min_velocity', function(v)
+    if v > params:get('max_velocity') then
+      params:set('max_velocity', v)
+    end
+  end)
 
   params:add_option('scale', 'scale', {'major', 'minor'}, 2)
   params:set_action('scale', function(scale) animator.notes = mapGridNotes(scale) end)
