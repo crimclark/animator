@@ -32,8 +32,6 @@ animator.shouldResetAll = false
 animator.lastReplaced = 0
 animator.showIntroText = true
 animator.midiDevice = nil
-animator.midiChannel = nil
-animator.activeNotes = {}
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -78,15 +76,6 @@ function Snapshot.new(animator)
   return snapshot
 end
 
--- todo: does each note need its own metro?
-function animator.allNotesOff()
-  for _,channelNote in pairs(animator.activeNotes) do
-    animator.midiDevice:note_off(channelNote.note, nil, channelNote.channel)
-    engine.noteOff(channelNote.note)
-  end
-  animator.activeNotes = {}
-end
-
 function animator.count()
   local play = {}
   local findPos = findPosition
@@ -99,8 +88,16 @@ function animator.count()
   local function playNote(note, channel)
     animator.midiDevice:note_on(note, random(1, 127), channel)
     noteOn(note, numToFreq(note), random(127)/127)
-    animator.activeNotes[#animator.activeNotes+1] = {channel = channel, note = note}
-    animator.noteOffMetro:start(params:get('note_length'), 1)
+
+    local noteOffMetro = metroInit()
+    noteOffMetro.event = function()
+      animator.midiDevice:note_off(note, nil, channel)
+      engine.noteOff(note)
+      metro.free(noteOffMetro.id)
+    end
+    noteOffMetro.time = params:get('note_length')
+    noteOffMetro.count = 1
+    noteOffMetro:start()
   end
 
   local function delayNote(note, channel)

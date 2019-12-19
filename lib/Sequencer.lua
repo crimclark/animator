@@ -22,7 +22,7 @@ function Sequencer.new(options)
     div = params:get('seq' .. options.index .. 'div'),
     divCount = 1,
     reset = false,
-    channel = 1,
+    channel = params:get('seq' .. options.index .. 'channel'),
   }
 
   setmetatable(seq, Sequencer)
