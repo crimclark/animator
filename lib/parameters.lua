@@ -27,6 +27,15 @@ function mapGridNotes(scale)
   return notes
 end
 
+function getScaleNames()
+  local names = {}
+  local scales = MusicUtil.SCALES
+  for i=1,#scales do
+    names[#names+1] = scales[i].name
+  end
+  return names
+end
+
 function parameters.init(animator)
   params:add_option('output', 'output', constants.OUTPUTS, 1)
   params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
@@ -99,7 +108,7 @@ function parameters.init(animator)
     end
   end)
 
-  params:add_option('scale', 'scale', {'major', 'minor'}, 2)
+  params:add_option('scale', 'scale', getScaleNames(), 1)
   params:set_action('scale', function(scale) animator.notes = mapGridNotes(scale) end)
   params:add_number('slop', 'slop', 0, 500, 0)
   params:add_number('max_notes', 'max notes', 1, 10, 6)
