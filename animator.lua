@@ -32,11 +32,16 @@ local g = grid.connect()
 engine.name = 'MollyThePoly'
 
 function init()
+  crow.ii.pullup(true)
+  crow.ii.jf.mode(1)
   math.randomseed(os.time())
   lfo.init(animator)
   parameters.init(animator)
   animator.grid = GRID.new(animator)
   animator.midiDevice = midi.connect(1)
+  animator.midiDevice.event = function(data)
+    animator.clock:process_midi(data)
+  end
   g.key = animator.grid:createKeyHandler()
   animator.clock.on_step = animator.count
   animator.noteOffMetro.event = animator.allNotesOff

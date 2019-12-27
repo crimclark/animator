@@ -93,6 +93,7 @@ function animator.count()
     local velocity = random(minVel, maxVel)
     animator.midiDevice:note_on(note, velocity, channel)
     noteOn(note, numToFreq(note), velocity/127)
+    crow.ii.jf.play_note((note-60)/12, 5)
 
     local noteOffMetro = metroInit()
     noteOffMetro.event = function()
