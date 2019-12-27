@@ -55,8 +55,16 @@ function parameters.init(animator)
   animator.clock:add_clock_params()
   params:set('bpm', 80)
 
-  params:add_control('note_length', 'note length', controlspec.new(0.01, 1, 'lin', 0.01, 0.01, ""))
+  local noteLengthControlspec = controlspec.new(0.01, 1, 'lin', 0.01, 0.01, "")
+  params:add_control('min_note_length', 'min note length', noteLengthControlspec)
+  params:add_control('max_note_length', 'max note length', noteLengthControlspec)
+  params:set_action('min_note_length', function(v)
+    if v > params:get('max_note_length') then
+      params:set('max_note_length', v)
+    end
+  end)
   params:add_separator()
+
 
   for i=1,8 do
     params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', INTERSECT_OPS, 1)

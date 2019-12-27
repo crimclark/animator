@@ -86,6 +86,8 @@ function animator.count()
   local slop = params:get('slop')
   local minVel = params:get('min_velocity')
   local maxVel = params:get('max_velocity')
+  local minLn = params:get('min_note_length')
+  local maxLn = params:get('max_note_length')
   local metroInit = metro.init
   local metroFree = metro.free
 
@@ -101,7 +103,7 @@ function animator.count()
       noteOff(note)
       metroFree(noteOffMetro.id)
     end
-    noteOffMetro.time = params:get('note_length')
+    noteOffMetro.time = random(minLn, maxLn)
     noteOffMetro.count = 1
     noteOffMetro:start()
   end
