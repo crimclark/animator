@@ -2,6 +2,7 @@ local constants = include('lib/constants')
 local STEP_NUM = constants.GRID_HEIGHT*constants.GRID_LENGTH
 local GRID_LEVELS = constants.GRID_LEVELS
 local INTERSECT_OPS = constants.INTERSECT_OPS
+local OUTPUTS = constants.OUTPUTS
 local helpers = include('lib/helpers')
 local findPosition = helpers.findPosition
 local copyTable = helpers.copyTable
@@ -90,22 +91,34 @@ function animator.count()
   local maxLn = params:get('max_note_length')
   local metroInit = metro.init
   local metroFree = metro.free
+  local output = params:get('output')
+  local jfPlayNote = crow.ii.jf.play_note
+
+  local useMidiCheck = {[OUTPUTS.MIDI] = true, [OUTPUTS.AUDIO_MIDI] = true}
+  local useMidi = useMidiCheck[output]
+
+  local useAudioCheck = {[OUTPUTS.AUDIO]} = true, [OUTPUTS.AUDIO_MIDI] = true}
+  local useAudio = useAudioCheck[output]
 
   local function playNote(note, channel)
-    local velocity = random(minVel, maxVel)
-    animator.midiDevice:note_on(note, velocity, channel)
-    noteOn(note, numToFreq(note), velocity/127)
-    crow.ii.jf.play_note((note-60)/12, 5)
+    if output == OUTPUTS.CROW_II_JF then
+      jfPlayNote((note-60)/12, 5)
+    else
+      local velocity = random(minVel, maxVel)
 
-    local noteOffMetro = metroInit()
-    noteOffMetro.event = function()
-      animator.midiDevice:note_off(note, nil, channel)
-      noteOff(note)
-      metroFree(noteOffMetro.id)
+      if useMidi then animator.midiDevice:note_on(note, velocity, channel) end
+      if useAudio then noteOn(note, numToFreq(note), velocity/127) end
+
+      local noteOffMetro = metroInit()
+      noteOffMetro.event = function()
+        if useMidi then animator.midiDevice:note_off(note, nil, channel) end
+        if useAudio then noteOff(note) end
+        metroFree(noteOffMetro.id)
+      end
+      noteOffMetro.time = random(minLn, maxLn)
+      noteOffMetro.count = 1
+      noteOffMetro:start()
     end
-    noteOffMetro.time = random(minLn, maxLn)
-    noteOffMetro.count = 1
-    noteOffMetro:start()
   end
 
   local function delayNote(note, channel)

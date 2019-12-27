@@ -28,6 +28,7 @@ function mapGridNotes(scale)
 end
 
 function parameters.init(animator)
+  params:add_option('output', 'output', constants.OUTPUTS, 1)
   params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
   params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
 
