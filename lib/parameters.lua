@@ -9,10 +9,10 @@ local parameters = {}
 local H,L = constants.GRID_HEIGHT, constants.GRID_LENGTH
 local STEP_NUM = H*L
 
-function mapGridNotes(scale)
+function mapGridNotes(scale, transpose)
   local notes = {}
   local pointer = 0
-  local intervals = MusicUtil.generate_scale(24, scale, 6)
+  local intervals = MusicUtil.generate_scale(24 + transpose, scale, 6)
   local startPos = STEP_NUM - L + 1
   local pos = startPos
   for i=1,H do
@@ -107,9 +107,14 @@ function parameters.init(animator)
       params:set('max_velocity', v)
     end
   end)
-
   params:add_option('scale', 'scale', getScaleNames(), 1)
-  params:set_action('scale', function(scale) animator.notes = mapGridNotes(scale) end)
+  params:set_action('scale', function(scale)
+    animator.notes = mapGridNotes(scale, params:get('global_transpose'))
+  end)
+  params:add_number('global_transpose', 'global transpose', -12, 12, 0)
+  params:set_action('global_transpose', function(v)
+    animator.notes = mapGridNotes(params:get('scale'), v)
+  end)
   params:add_number('slop', 'slop', 0, 500, 0)
   params:add_number('max_notes', 'max notes', 1, 10, 6)
   params:add_separator()
