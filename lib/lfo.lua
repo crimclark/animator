@@ -29,14 +29,14 @@ function createLfoHandlers(animator)
   local handler  = function(index, axis, wrap)
     local val = 0
 
-    if hnds[index].waveform == 'square' then
-      val = math.floor(hnds.scale(hnds[index].slope, -1, 1, 1, wrap)) - 1
-    else
+    if hnds[index].waveform == 'sine' then
       val = math.floor(hnds[index].slope * wrap + 0.5)
+    else
+      val = math.floor(hnds.scale(hnds[index].slope, -1, 1, 1, wrap)) - 1
     end
 
-    if val ~= hnds[index].prev then
-      hnds[index].prev = val
+    if val ~= hnds[index].prev_scaled_val then
+      hnds[index].prev_scaled_val = val
       animator.moveSequencersPos(axis, val, wrap)
       animator.redraw()
     end
