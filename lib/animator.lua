@@ -3,6 +3,10 @@ local STEP_NUM = constants.GRID_HEIGHT*constants.GRID_LENGTH
 local GRID_LEVELS = constants.GRID_LEVELS
 local INTERSECT_OPS = constants.INTERSECT_OPS
 local OUTPUTS = constants.OUTPUTS
+local AUDIO = constants.OUTPUT_AUDIO
+local MIDI = constants.OUTPUT_MIDI
+local AUDIO_MIDI = constants.OUTPUT_AUDIO_MIDI
+local CROW_II_JF = constants.OUTPUT_CROW_II_JF
 local helpers = include('lib/helpers')
 local findPosition = helpers.findPosition
 local copyTable = helpers.copyTable
@@ -91,23 +95,25 @@ function animator.count()
   local maxLn = params:get('max_note_length')
   local metroInit = metro.init
   local metroFree = metro.free
-  local output = params:get('output')
+  local output = OUTPUTS[params:get('output')]
   local jfPlayNote = crow.ii.jf.play_note
 
-  local useMidiCheck = {[OUTPUTS.MIDI] = true, [OUTPUTS.AUDIO_MIDI] = true}
+  local useMidiCheck = {[MIDI] = true, [AUDIO_MIDI] = true}
   local useMidi = useMidiCheck[output]
 
-  local useAudioCheck = {[OUTPUTS.AUDIO]} = true, [OUTPUTS.AUDIO_MIDI] = true}
+  local useAudioCheck = {[AUDIO] = true, [AUDIO_MIDI] = true}
   local useAudio = useAudioCheck[output]
 
   local function playNote(note, channel)
-    if output == OUTPUTS.CROW_II_JF then
+    if output == CROW_II_JF then
       jfPlayNote((note-60)/12, 5)
     else
       local velocity = random(minVel, maxVel)
 
       if useMidi then animator.midiDevice:note_on(note, velocity, channel) end
-      if useAudio then noteOn(note, numToFreq(note), velocity/127) end
+      if useAudio then
+        noteOn(note, numToFreq(note), velocity/127)
+      end
 
       local noteOffMetro = metroInit()
       noteOffMetro.event = function()
@@ -115,7 +121,7 @@ function animator.count()
         if useAudio then noteOff(note) end
         metroFree(noteOffMetro.id)
       end
-      noteOffMetro.time = random(minLn, maxLn)
+      noteOffMetro.time = random(minLn*100, maxLn*100)/100
       noteOffMetro.count = 1
       noteOffMetro:start()
     end
