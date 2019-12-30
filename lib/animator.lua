@@ -245,8 +245,7 @@ function moveStepsPos(index, axis, val, wrap)
     local pos = findPos(step.x, step.y)
     step[axis] = (originalSteps[i][axis] + val - 1) % wrap + 1
     if animator.on[pos] > 0 then
-      newOn[pos] = -1
-      newOn[findPos(step.x, step.y)] = 1
+      newOn[findPosition(step.x, step.y)] = 1
     end
   end
 
@@ -278,7 +277,7 @@ function animator.moveSequencersPos(axis, val, wrap)
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
   for pos,_ in pairs(animator.on) do
-    if newOn[pos] == 1 then
+    if newOn[pos] ~= nil then
       animator.on[pos] = animator.enabled[pos]
     else
       animator.on[pos] = 0
