@@ -2,7 +2,7 @@ local constants = include('animator/lib/constants')
 local INTERSECT_OPS = constants.INTERSECT_OPS
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
 local MusicUtil = require "musicutil"
-local hs = include("awake/lib/halfsecond")
+local lfo = include('animator/lib/lfo')
 
 local parameters = {}
 
@@ -36,46 +36,7 @@ function getScaleNames()
   return names
 end
 
-function parameters.init(animator)
-  params:add_option('output', 'output', constants.OUTPUTS, 1)
-  params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
-  params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
-
-  local hasMoveTarget = {[2] = true, [3] = true}
-
-  for i=1,constants.LFO_NUM do
-    params:set_action(i .. 'lfo',
-      function(v)
-        if v == 1 then
-          local hasMove = false
-          for j=1,4 do
-            if j ~= i and hasMoveTarget[params:get(j .. 'lfo_target')] and params:get(j .. 'lfo') == 2 then
-              hasMove = true
-            end
-          end
-
-          if not hasMove then animator.original = {} end
-        end
-      end
-    )
-  end
-
-
-  params:add_separator()
-  animator.clock:add_clock_params()
-  params:set('bpm', 80)
-
-  local noteLengthControlspec = controlspec.new(0.01, 1, 'lin', 0.01, 0.01, "")
-  params:add_control('min_note_length', 'min note length', noteLengthControlspec)
-  params:add_control('max_note_length', 'max note length', noteLengthControlspec)
-  params:set_action('min_note_length', function(v)
-    if v > params:get('max_note_length') then
-      params:set('max_note_length', v)
-    end
-  end)
-  params:add_separator()
-
-
+function addSeqParams(animator)
   for i=1,8 do
     params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', INTERSECT_OPS, 1)
     params:set_action('seq' .. i .. 'intersect', function(v)
@@ -99,6 +60,24 @@ function parameters.init(animator)
     end)
     params:add_separator()
   end
+end
+
+function parameters.init(animator)
+  params:add_option('output', 'output', constants.OUTPUTS, 1)
+  params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
+  params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
+
+  animator.clock:add_clock_params()
+  params:set('bpm', 80)
+
+  local noteLengthControlspec = controlspec.new(0.01, 1, 'lin', 0.01, 0.01, "")
+  params:add_control('min_note_length', 'min note length', noteLengthControlspec)
+  params:add_control('max_note_length', 'max note length', noteLengthControlspec)
+  params:set_action('min_note_length', function(v)
+    if v > params:get('max_note_length') then
+      params:set('max_note_length', v)
+    end
+  end)
 
   params:add_number('max_velocity', 'max velocity', 1, 127, 127)
   params:add_number('min_velocity', 'min velocity', 1, 127, 1)
@@ -117,6 +96,28 @@ function parameters.init(animator)
   end)
   params:add_number('slop', 'slop', 0, 500, 0)
   params:add_number('max_notes', 'max notes', 1, 10, 6)
+
+  lfo.init(animator)
+
+  local hasMoveTarget = {[2] = true, [3] = true}
+
+  for i=1,constants.LFO_NUM do
+    params:set_action(i .. 'lfo',
+      function(v)
+        if v == 1 then
+          local hasMove = false
+          for j=1,4 do
+            if j ~= i and hasMoveTarget[params:get(j .. 'lfo_target')] and params:get(j .. 'lfo') == 2 then
+              hasMove = true
+            end
+          end
+
+          if not hasMove then animator.original = {} end
+        end
+      end
+    )
+  end
+
   params:add_separator()
 
   MollyThePoly.add_params()
@@ -126,7 +127,10 @@ function parameters.init(animator)
   params:set('osc_wave_shape', 1)
   params:set('noise_level', 0)
   params:set('chorus_mix', 0)
---   hs.init()
+
+  params:add_separator()
+  
+  addSeqParams(animator)
 end
 
 return parameters

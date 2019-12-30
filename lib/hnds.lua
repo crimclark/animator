@@ -6,7 +6,7 @@
 --
 -- v0.3 @justmat
 
-local number_of_outputs = 4
+local number_of_outputs = 2
 
 local tau = math.pi * 2
 
