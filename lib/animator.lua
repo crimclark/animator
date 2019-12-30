@@ -260,13 +260,7 @@ function animator.moveSequencers(axis, delta, wrap)
     animator.sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
-  for pos,n in pairs(animator.on) do
-    if newOn[pos] ~= nil then
-      animator.on[pos] = animator.enabled[pos]
-    else
-      animator.on[pos] = 0
-    end
-  end
+  animator.setOnToNew(newOn)
 end
 
 function animator.moveSequencersPos(axis, val, wrap)
@@ -276,6 +270,10 @@ function animator.moveSequencersPos(axis, val, wrap)
     animator.sequencers[i]:regenStepMap()
     for pos,n in pairs(resp) do newOn[pos] = n end
   end
+  animator.setOnToNew(newOn)
+end
+
+function animator.setOnToNew(newOn)
   for pos,_ in pairs(animator.on) do
     if newOn[pos] ~= nil then
       animator.on[pos] = animator.enabled[pos]
