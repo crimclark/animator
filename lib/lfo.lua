@@ -2,22 +2,6 @@ local constants = include('lib/constants')
 local hnds = include('lib/hnds')
 local LFO_NUM = constants.LFO_NUM
 local lfo = {}
-local queue = {}
-
-function processQueue(handler)
-  local queueLn = #queue+1
-
-  local function callHandler()
-    queue[1]()
-    table.remove(queue, 1)
-    queueLn = queueLn-1
-  end
-
-  queue[queueLn] = handler
-
-  while queueLn > 0 do callHandler() end
-end
-
 
 function createProcess(handlers)
   return function()
@@ -25,7 +9,7 @@ function createProcess(handlers)
       local target = params:get(i .. 'lfo_target')
 
       if params:get(i .. 'lfo') == 2 and target ~= 1 then
-        processQueue(function() handlers[target](i) end)
+        handlers[target](i)
       end
     end
   end
