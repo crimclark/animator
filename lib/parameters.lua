@@ -106,7 +106,7 @@ function parameters.init(animator)
       function(v)
         if v == 1 then
           local hasMove = false
-          for j=1,4 do
+          for j=1,constants.LFO_NUM do
             if j ~= i and hasMoveTarget[params:get(j .. 'lfo_target')] and params:get(j .. 'lfo') == 2 then
               hasMove = true
             end
@@ -129,7 +129,7 @@ function parameters.init(animator)
   params:set('chorus_mix', 0)
 
   params:add_separator()
-  
+
   addSeqParams(animator)
 end
 
