@@ -178,7 +178,6 @@ function animator.count()
     local seqNum = #seqs
     if seqNum > 1 then
       for i=1,seqNum do
-        channelNotes[seqs[i].channel] = note
         local intersect = INTERSECT_OPS[seqs[i].intersect]
         if intersect == constants.INTERSECT_OP_OCTAVE then
           note = note + 12
@@ -191,6 +190,7 @@ function animator.count()
         elseif intersect == constants.INTERSECT_OP_RESET_ALL then
           animator.shouldResetAll = true
         end
+        channelNotes[seqs[i].channel] = note
       end
     end
 
