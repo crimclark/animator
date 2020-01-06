@@ -7,8 +7,6 @@
 --
 -- v1 by @crim
 --
--- Full docs @ ____________
---
 -- Hold 2 pads to draw a
 -- horizontal, vertical or
 -- diagonal sequence
