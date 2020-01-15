@@ -1,3 +1,5 @@
+local fileselect = require 'fileselect'
+local textentry = require 'textentry'
 local constants = include('animator/lib/constants')
 local INTERSECT_OPS = constants.INTERSECT_OPS
 local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
@@ -63,6 +65,11 @@ function addSeqParams(animator)
 end
 
 function parameters.init(animator)
+  params:add_trigger('save', 'save doodle')
+  params:set_action('save', function(x) textentry.enter(animator.save, animator.name) end)
+  params:add_trigger('load', 'load doodle')
+  params:set_action('load', function() fileselect.enter(norns.state.data, animator.load) end)
+  params:add_separator()
   params:add_option('output', 'output', constants.OUTPUTS, 1)
   params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
   params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)

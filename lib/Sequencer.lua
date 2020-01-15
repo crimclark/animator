@@ -16,12 +16,12 @@ function Sequencer.new(options)
     ID = options.ID or os.time(),
     steps = options.steps,
     stepMap = createStepMap(options.steps),
-    index = 1,
+    index = options.index or 1,
     length = #options.steps,
     intersect = params:get('seq' .. options.index .. 'intersect'),
     div = params:get('seq' .. options.index .. 'div'),
-    divCount = 1,
-    reset = false,
+    divCount = options.divCount or 1,
+    reset = options.reset or false,
     channel = params:get('seq' .. options.index .. 'channel'),
   }
 

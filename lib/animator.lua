@@ -1,3 +1,4 @@
+local tab = require 'tabutil'
 local constants = include('lib/constants')
 local STEP_NUM = constants.GRID_HEIGHT*constants.GRID_LENGTH
 local GRID_LEVELS = constants.GRID_LEVELS
@@ -37,6 +38,7 @@ animator.shouldResetAll = false
 animator.lastReplaced = 0
 animator.showIntroText = true
 animator.midiDevice = nil
+animator.name = 'untitled'
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -340,6 +342,65 @@ end
 function animator.setStepLevels(seq)
   animator.stepLevels = seq and reduceStepLevels(seq) or {}
 end
+
+function animator.save(txt)
+  if txt then
+    local path = norns.state.data .. txt
+    local doodle = {
+      name = txt,
+      on = animator.on,
+      enabled = animator.enabled,
+      sequencers = animator.sequencers,
+      snapshots = animator.snapshots,
+      selectedSnapshot = animator.grid.snapshot,
+    }
+    tab.save(doodle, path .. '.doodle')
+    params:write(path .. '.pset')
+  else
+    print('save canceled')
+  end
+end
+
+function animator.load(path)
+  print(path)
+  if string.find(path, 'doodle') ~= nil then
+    local doodle = tab.load(path)
+    print(doodle)
+    if doodle ~= nil then
+      params:read(norns.state.data .. doodle.name ..'.pset')
+
+      animator.name = doodle.name
+
+      animator.on = doodle.on
+      animator.enabled = doodle.enabled
+
+      animator.sequencers = {}
+      for i=1,#doodle.sequencers do
+        local seq = doodle.sequencers[i]
+        animator.sequencers[i] = Sequencer.new(seq, i)
+      end
+
+      animator.snapshots = {}
+      for i=1,#doodle.snapshots do
+        local snap = doodle.snapshots[i]
+        local newSnap = {}
+        newSnap.on = snap.on
+        newSnap.enabled = snap.enabled
+        newSnap.sequencers = {}
+        for j=1,#snap.sequencers do
+          local seq = snap.sequencers[j]
+          newSnap.sequencers[j] = Sequencer.new(seq, j)
+        end
+        animator.snapshots[i] = newSnap
+        animator.grid.snapshot = doodle.selectedSnapshot
+      end
+    else
+      print('you have no doodles')
+    end
+  end
+end
+
+
 
 function reduceStepLevels(seq, levels)
   levels = levels or {}
