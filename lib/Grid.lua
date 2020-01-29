@@ -106,8 +106,9 @@ function GRID:handleRightColSelect(x, y)
       if self.snapshot == y then self.snapshot = 0 end
       animator.snapshots[y] = nil
     else
+      if y == self.snapshot then return end
       self.snapshot = y
-      animator.createNewSnapshot(y)
+      animator.handleSelectSnapshot(y)
     end
 
     animator.redraw()

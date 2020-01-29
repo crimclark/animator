@@ -78,7 +78,13 @@ function Snapshot.new(animator)
     sequencers = animator.sequencers,
     on = animator.on,
     enabled = animator.enabled,
+    divs = {},
+    intersects = {}
   }
+  for i=1,MAX_SEQ_NUM do
+    snapshot.divs[i] = params:get('seq' .. i .. 'div')
+    snapshot.intersects[i] = params:get('seq' .. i .. 'intersect')
+  end
 
   return snapshot
 end
@@ -285,7 +291,7 @@ function animator.setOnToNew(newOn)
   end
 end
 
-function animator.createNewSnapshot(i)
+function animator.handleSelectSnapshot(i)
   if animator.snapshots[i] == nil then
     animator.snapshots[i] = Snapshot.new(animator)
   end
@@ -297,13 +303,17 @@ function setToSnapshot(snapshot)
   animator.on = copyTable(snapshot.on)
   animator.enabled = copyTable(snapshot.enabled)
   animator.sequencers = deepcopy(snapshot.sequencers)
+
+  for i=1,MAX_SEQ_NUM do
+    params:set('seq' .. i .. 'intersect', snapshot.intersects[i])
+    params:set('seq' .. i .. 'div', snapshot.divs[i])
+  end
 end
 
 function animator.clearSeq(index)
   clearStepState(animator.sequencers[index].steps)
   clearOnState(animator.sequencers[index].steps)
   table.remove(animator.sequencers, index)
-  if not animator.sequencers[index+1] then resetSeqParams(index+1) end
   animator.redraw()
 end
 
@@ -353,24 +363,24 @@ function animator.save(txt)
       sequencers = animator.sequencers,
       snapshots = animator.snapshots,
       selectedSnapshot = animator.grid.snapshot,
+      showIntroText = animator.showIntroText
     }
     tab.save(doodle, path .. '.doodle')
     params:write(path .. '.pset')
+    animator.name = doodle.name
   else
     print('save canceled')
   end
 end
 
 function animator.load(path)
-  print(path)
   if string.find(path, 'doodle') ~= nil then
     local doodle = tab.load(path)
-    print(doodle)
     if doodle ~= nil then
       params:read(norns.state.data .. doodle.name ..'.pset')
 
       animator.name = doodle.name
-
+      animator.showIntroText = doodle.showIntroText
       animator.on = doodle.on
       animator.enabled = doodle.enabled
 
@@ -383,24 +393,21 @@ function animator.load(path)
       animator.snapshots = {}
       for i=1,#doodle.snapshots do
         local snap = doodle.snapshots[i]
-        local newSnap = {}
-        newSnap.on = snap.on
-        newSnap.enabled = snap.enabled
-        newSnap.sequencers = {}
+        newSnap = copyTable(snap)
+
         for j=1,#snap.sequencers do
           local seq = snap.sequencers[j]
           newSnap.sequencers[j] = Sequencer.new(seq, j)
         end
         animator.snapshots[i] = newSnap
-        animator.grid.snapshot = doodle.selectedSnapshot
       end
+
+      animator.grid.snapshot = doodle.selectedSnapshot
     else
       print('you have no doodles')
     end
   end
 end
-
-
 
 function reduceStepLevels(seq, levels)
   levels = levels or {}
