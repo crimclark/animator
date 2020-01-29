@@ -46,7 +46,10 @@ E3 - move all sequencers across the X axis
 K2 - Reset all sequencers (or selected sequence if on options view)  
 K3 - Clear all sequencers (or selected sequence if on options view)
 
-## Parameters
+## Presets
+Save and load presets using "save doodle" and "load doodle" options from the parameters menu. When loading, load the file with the ".doodle" extension.
+
+## Other Parameters
 
 Additional parameters accessible via norns parameters menu include:
 

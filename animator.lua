@@ -5,7 +5,7 @@
 -- 2D Polyphonic Sequencer
 -- .....................................................
 --
--- v1 by @crim
+-- v1.??? by @crim
 --
 -- Hold 2 pads to draw a
 -- horizontal, vertical or

@@ -38,7 +38,7 @@ animator.shouldResetAll = false
 animator.lastReplaced = 0
 animator.showIntroText = true
 animator.midiDevice = nil
-animator.name = 'untitled'
+animator.name = 'untilted'
 
 function updateEnabled(steps)
   for i=1,#steps do
