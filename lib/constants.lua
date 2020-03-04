@@ -9,6 +9,9 @@ local AUDIO = 'audio'
 local MIDI = 'midi'
 local AUDIO_MIDI = 'audio + midi'
 local CROW_II_JF = 'crow ii jf'
+local CROW_CV = 'crow cv'
+local CROW_CV_JF = 'crow cv + JF'
+local AUDIO_CV_JF = 'audio + cv + JF'
 
 local constants = {
   GRID_HEIGHT = 8,
@@ -27,7 +30,10 @@ local constants = {
   OUTPUT_MIDI = MIDI,
   OUTPUT_AUDIO_MIDI = AUDIO_MIDI,
   OUTPUT_CROW_II_JF = CROW_II_JF,
-  OUTPUTS = {AUDIO, MIDI, AUDIO_MIDI, CROW_II_JF}
+  OUTPUT_CROW_CV = CROW_CV,
+  OUTPUT_CROW_CV_JF = CROW_CV_JF,
+  OUTPUT_AUDIO_CV_JF = AUDIO_CV_JF,
+  OUTPUTS = {AUDIO, MIDI, AUDIO_MIDI, CROW_II_JF, CROW_CV, CROW_CV_JF, AUDIO_CV_JF}
 }
 
 return constants

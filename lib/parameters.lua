@@ -71,6 +71,25 @@ function parameters.init(animator)
   params:set_action('load', function() fileselect.enter(norns.state.data, animator.load) end)
   params:add_separator()
   params:add_option('output', 'output', constants.OUTPUTS, 1)
+  params:set_action('output', function(v)
+    local output = constants.OUTPUTS[v]
+    local triggerASL = '{to(5,0),to(0,0.25)}'
+
+    if output == constants.OUTPUT_AUDIO or output == constants.OUTPUT_AUDIO_MIDI or output == constants.OUTPUT_MIDI then
+      crow.ii.jf.mode(0)
+    elseif output == constants.OUTPUT_CROW_CV then
+      crow.ii.jf.mode(0)
+      crow.output[2].action = triggerASL
+      crow.output[4].action = triggerASL
+    elseif output == constants.OUTPUT_CROW_II_JF then
+      crow.ii.jf.mode(1)
+    elseif output == constants.OUTPUT_CROW_CV_JF or output == constants.OUTPUT_AUDIO_CV_JF then
+      crow.ii.jf.mode(1)
+      crow.output[2].action = triggerASL
+      crow.output[4].action = triggerASL
+    end
+  end)
+
   params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
   params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
 

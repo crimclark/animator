@@ -8,6 +8,9 @@ local AUDIO = constants.OUTPUT_AUDIO
 local MIDI = constants.OUTPUT_MIDI
 local AUDIO_MIDI = constants.OUTPUT_AUDIO_MIDI
 local CROW_II_JF = constants.OUTPUT_CROW_II_JF
+local CROW_CV = constants.OUTPUT_CROW_CV
+local CROW_CV_JF = constants.OUTPUT_CROW_CV_JF
+local AUDIO_CV_JF = constants.OUTPUT_AUDIO_CV_JF
 local helpers = include('lib/helpers')
 local findPosition = helpers.findPosition
 local copyTable = helpers.copyTable
@@ -109,13 +112,31 @@ function animator.count()
   local useMidiCheck = {[MIDI] = true, [AUDIO_MIDI] = true}
   local useMidi = useMidiCheck[output]
 
-  local useAudioCheck = {[AUDIO] = true, [AUDIO_MIDI] = true}
+  local useAudioCheck = {[AUDIO] = true, [AUDIO_MIDI] = true, [AUDIO_CV_JF] = true}
   local useAudio = useAudioCheck[output]
 
+  local useJFCheck = {[CROW_II_JF] = true, [CROW_CV_JF] = true, [AUDIO_CV_JF] = true}
+  local useJF = useJFCheck[output]
+
+  local useCVCheck = {[CROW_CV] = true, [CROW_CV_JF] = true, [AUDIO_CV_JF] = true}
+  local useCV = useCVCheck[output]
+
+  local currentCrowOut = 1
+  local crowCVPlayed = 0
+
   local function playNote(note, channel)
-    if output == CROW_II_JF then
+    if useJF then
       jfPlayNote((note-60)/12, 5)
-    else
+    end
+
+    if useCV and crowCVPlayed < 2 then
+      crow.output[currentCrowOut].volts = (note-60)/12
+      crow.output[currentCrowOut+1].execute()
+      currentCrowOut = (currentCrowOut + 2) % 4
+      crowCVPlayed = crowCVPlayed + 1
+    end
+
+    if useAudio or useMidi then
       local velocity = random(minVel, maxVel)
 
       if useMidi then animator.midiDevice:note_on(note, velocity, channel) end
