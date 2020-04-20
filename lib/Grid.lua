@@ -102,15 +102,8 @@ function GRID:handleRightColSelect(x, y)
   local animator = self.animator
   if y >= 1 and y <= SNAPSHOT_NUM then
     local isClearHeld = self.held and self.held.x == NAV_COL and self.held.y == CLEAR_POSITION
-    if isClearHeld then
-      if self.snapshot == y then self.snapshot = 0 end
-      animator.snapshots[y] = nil
-    else
-      if y == self.snapshot then return end
-      self.snapshot = y
-      animator.handleSelectSnapshot(y)
-    end
-
+    animator.handleSelectSnapshot(y, isClearHeld)
+    self.snapshot = y
     animator.redraw()
   elseif y == CLEAR_POSITION then
     self:setHeld(x, y)

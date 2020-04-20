@@ -312,8 +312,8 @@ function animator.setOnToNew(newOn)
   end
 end
 
-function animator.handleSelectSnapshot(i)
-  if animator.snapshots[i] == nil then
+function animator.handleSelectSnapshot(i, isClearHeld)
+  if animator.snapshots[i] == nil or isClearHeld then
     animator.snapshots[i] = Snapshot.new(animator)
   end
 

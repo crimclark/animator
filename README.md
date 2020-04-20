@@ -16,7 +16,7 @@ Hold the first and last pad of your sequencer to clear it (you can also clear it
 
 There is a max of 8 sequencers. If you go over the max, they will be replaced in "first in first out" order  (so the 9th sequence will replace the first, 10th will replace the 2nd, etc).
 
-Press a snapshot button to store the current state. 
+Press a snapshot pad to store the current state. If you press the same pad again, it will set all sequencers back to that state. To overwrite a snapshot, hold the "clear" pad and select the snapshot that you want to overwrite.   
 
 ## options
 
