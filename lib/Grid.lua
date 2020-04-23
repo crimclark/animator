@@ -1,3 +1,4 @@
+local pattern_time = require 'pattern_time'
 local constants = include('animator/lib/constants')
 local helpers = include('animator/lib/helpers')
 local GRID_LENGTH = constants.GRID_LENGTH
@@ -6,8 +7,9 @@ local CANVAS_HEIGHT = constants.CANVAS_HEIGHT
 local NAV_ROW = constants.GRID_NAV_ROW
 local GRID_LEVELS = constants.GRID_LEVELS
 local SNAPSHOT_NUM = 8
+local PATTERN_NUM = 4
 local g = grid.connect()
-local CLEAR_POSITION = SNAPSHOT_NUM + 1
+local CLEAR_POSITION = 15
 local TOGGLE_VIEW_POSITION = constants.CANVAS_LENGTH
 local DIV_START = GRID_LENGTH - 8
 local INTERSECT_START = 2
@@ -23,12 +25,21 @@ function GRID.new(animator)
     animator = animator,
     view = 1,
     selected = 1,
+    patterns = {},
   }
   setmetatable(g, GRID)
   setmetatable(g, {__index = GRID})
 
   g.viewKeyHandlers = {g.mainKeyHandler, g.optionsKeyHandler}
   g.viewRedraws = {g.redrawMain, g.redrawOptions}
+
+  for i=1,PATTERN_NUM do
+    g.patterns[i] = pattern_time.new()
+    g.patterns[i].process = function(e)
+      g:handleBottomRowSelect(e.x, e.y)
+    end
+  end
+
   return g
 end
 
@@ -40,7 +51,7 @@ end
 function GRID:redrawMain()
   g:all(0)
   drawSteps(self.animator.stepLevels)
-  redrawBottomRow(self.snapshot)
+  self:redrawBottomRow()
   g:refresh()
 end
 
@@ -75,17 +86,7 @@ function GRID:optionsKeyHandler(x, y, z)
   end
 end
 
-function GRID:mainKeyDown(x, y, held)
-  if y == NAV_ROW and x == 13 then
-    return self.animator.pattern:rec_start();
-  end
-  if y == NAV_ROW and x == 14 then
-    return self.animator.pattern:rec_stop();
-  end
-  if y == NAV_ROW and x == 15 then
-    return self.animator.pattern:start();
-  end
-
+function GRID:mainKeyDown(x, y)
   if y <= CANVAS_HEIGHT then
     self:handleSequence(x, y)
   elseif y == NAV_ROW then
@@ -111,12 +112,48 @@ end
 
 function GRID:handleBottomRowSelect(x, y)
   local animator = self.animator
+  local isClearHeld = self.held and self.held.y == NAV_ROW and self.held.x == CLEAR_POSITION
+
+  local function stopOtherPattern(current, patterns)
+    for i=1,PATTERN_NUM do
+      local otherPat = patterns[i]
+      if i ~= current and (otherPat.rec == 1 or otherPat.play == 1) then
+        otherPat:rec_stop()
+        otherPat:stop()
+      end
+    end
+  end
+
   if x >= 1 and x <= SNAPSHOT_NUM then
     local e = {x=x, y=y}
-    local isClearHeld = self.held and self.held.y == NAV_ROW and self.held.x == CLEAR_POSITION
     animator.handleSelectSnapshot(x, isClearHeld)
     self.snapshot = x
-    self.animator.pattern:watch(e)
+
+    for i=1,PATTERN_NUM do
+      self.patterns[i]:watch(e)
+    end
+
+    animator.redraw()
+  elseif x >= 10 and x <= 13 then
+    local i = x - 9
+    local pattern = self.patterns[i]
+    if isClearHeld then
+      pattern:rec_stop()
+      pattern:stop()
+      pattern:clear();
+    elseif pattern.rec == 1 then
+      pattern:rec_stop()
+      pattern:stop()
+      pattern:start();
+    elseif pattern.count == 0 then
+      stopOtherPattern(i, self.patterns)
+      pattern:rec_start()
+    elseif pattern.play == 1 then
+      pattern:stop()
+    else
+      stopOtherPattern(i, self.patterns)
+      pattern:start()
+    end
     animator.redraw()
   elseif x == CLEAR_POSITION then
     self:setHeld(x, y)
@@ -213,6 +250,21 @@ function GRID:drawOptions(selected)
   end
 end
 
+function GRID:redrawBottomRow()
+  for i=1,SNAPSHOT_NUM do
+    if self.snapshot == i then
+      g:led(i, NAV_ROW, GRID_LEVELS.HIGH)
+    elseif self.animator.snapshots[i] ~= nil then
+      g:led(i, NAV_ROW, GRID_LEVELS.LOW_MED)
+    else
+      g:led(i, NAV_ROW, GRID_LEVELS.DIM)
+    end
+  end
+  drawPatterns(self.patterns);
+  g:led(CLEAR_POSITION, NAV_ROW, GRID_LEVELS.DIM)
+  drawToggleViewPad()
+end
+
 function drawSteps(levels)
   local findXY = helpers.findXY
   for pos,level in pairs(levels) do
@@ -221,13 +273,14 @@ function drawSteps(levels)
   end
 end
 
-function redrawBottomRow(snapshot)
-  for i=1,SNAPSHOT_NUM do
-    g:led(i, NAV_ROW, snapshot == i and GRID_LEVELS.HIGH or GRID_LEVELS.LOW_MED)
+function drawPatterns(patterns)
+  for i=1,PATTERN_NUM do
+    local x = i+9
+    if patterns[i].rec == 1 then g:led(x, NAV_ROW, GRID_LEVELS.HIGH)
+    elseif patterns[i].play == 1 then g:led(x, NAV_ROW, GRID_LEVELS.MED)
+    elseif patterns[i].count > 0 then g:led(x, NAV_ROW, GRID_LEVELS.LOW_MED)
+    else g:led(x, NAV_ROW, GRID_LEVELS.DIM) end
   end
-
-  g:led(CLEAR_POSITION, NAV_ROW, GRID_LEVELS.DIM)
-  drawToggleViewPad()
 end
 
 function getNewLineSteps(a, b)
