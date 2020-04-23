@@ -26,6 +26,7 @@ local animator = include('lib/animator')
 local ui = include('lib/ui')
 local GRID = include('lib/Grid')
 local g = grid.connect()
+local pattern_time = require 'pattern_time'
 engine.name = 'MollyThePoly'
 
 function init()
@@ -52,6 +53,14 @@ function init()
   end
   animator.noteOffMetro.event = animator.allNotesOff
   animator.clock:start()
+  animator.pattern = pattern_time.new()
+  animator.pattern.process = function(e)
+    if e.delta then
+      enc(e.n, e.delta)
+    else
+      animator.grid:handleBottomRowSelect(e.x, e.y)
+    end
+  end
   animator.redraw()
 end
 
@@ -84,6 +93,8 @@ function key(n, z)
 end
 
 function enc(n, delta)
+  local e = {n = n, delta = delta}
+  animator.pattern:watch(e)
   if n == 2 then
     animator.moveSequencers('y', delta, constants.CANVAS_HEIGHT)
     animator.redraw()

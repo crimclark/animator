@@ -75,7 +75,17 @@ function GRID:optionsKeyHandler(x, y, z)
   end
 end
 
-function GRID:mainKeyDown(x, y)
+function GRID:mainKeyDown(x, y, held)
+  if y == NAV_ROW and x == 13 then
+    return self.animator.pattern:rec_start();
+  end
+  if y == NAV_ROW and x == 14 then
+    return self.animator.pattern:rec_stop();
+  end
+  if y == NAV_ROW and x == 15 then
+    return self.animator.pattern:start();
+  end
+
   if y <= CANVAS_HEIGHT then
     self:handleSequence(x, y)
   elseif y == NAV_ROW then
@@ -102,9 +112,11 @@ end
 function GRID:handleBottomRowSelect(x, y)
   local animator = self.animator
   if x >= 1 and x <= SNAPSHOT_NUM then
+    local e = {x=x, y=y}
     local isClearHeld = self.held and self.held.y == NAV_ROW and self.held.x == CLEAR_POSITION
     animator.handleSelectSnapshot(x, isClearHeld)
     self.snapshot = x
+    self.animator.pattern:watch(e)
     animator.redraw()
   elseif x == CLEAR_POSITION then
     self:setHeld(x, y)
