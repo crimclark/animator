@@ -85,10 +85,10 @@ end
 
 function enc(n, delta)
   if n == 2 then
-    animator.moveSequencers('y', delta, constants.GRID_HEIGHT)
+    animator.moveSequencers('y', delta, constants.CANVAS_HEIGHT)
     animator.redraw()
   elseif n == 3 then
-    animator.moveSequencers('x', delta, constants.GRID_LENGTH)
+    animator.moveSequencers('x', delta, constants.CANVAS_LENGTH)
     animator.redraw()
   end
 end

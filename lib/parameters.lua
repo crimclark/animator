@@ -8,7 +8,7 @@ local lfo = include('animator/lib/lfo')
 
 local parameters = {}
 
-local H,L = constants.GRID_HEIGHT, constants.GRID_LENGTH
+local H,L = constants.CANVAS_HEIGHT, constants.CANVAS_LENGTH
 local STEP_NUM = H*L
 
 function mapGridNotes(scale, transpose)

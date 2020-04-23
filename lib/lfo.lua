@@ -44,8 +44,8 @@ function createLfoHandlers(animator)
 
   local handlers = {}
   handlers[1] = function() end
-  handlers[2] = function(i) handler(i, 'x', constants.GRID_LENGTH) end
-  handlers[3] = function(i) handler(i, 'y', constants.GRID_HEIGHT) end
+  handlers[2] = function(i) handler(i, 'x', constants.CANVAS_LENGTH) end
+  handlers[3] = function(i) handler(i, 'y', constants.CANVAS_HEIGHT) end
 
   return handlers
 end

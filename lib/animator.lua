@@ -1,6 +1,6 @@
 local tab = require 'tabutil'
 local constants = include('lib/constants')
-local STEP_NUM = constants.GRID_HEIGHT*constants.GRID_LENGTH
+local STEP_NUM = constants.CANVAS_HEIGHT*constants.CANVAS_LENGTH
 local GRID_LEVELS = constants.GRID_LEVELS
 local INTERSECT_OPS = constants.INTERSECT_OPS
 local OUTPUTS = constants.OUTPUTS

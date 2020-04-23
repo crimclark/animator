@@ -1,5 +1,5 @@
 local constants = include('animator/lib/constants')
-local L = constants.GRID_LENGTH
+local L = constants.CANVAS_LENGTH
 local helpers = {}
 
 function helpers.findPosition(x, y)

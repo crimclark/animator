@@ -12,11 +12,15 @@ local CROW_II_JF = 'crow ii jf'
 local CROW_CV = 'crow cv'
 local CROW_CV_JF = 'crow cv + JF'
 local AUDIO_CV_JF = 'audio + cv + JF'
+local GRID_LENGTH = 16
+local GRID_HEIGHT = 8
 
 local constants = {
-  GRID_HEIGHT = 8,
-  GRID_LENGTH = 15,
-  GRID_NAV_COL = 16,
+  GRID_HEIGHT = GRID_HEIGHT,
+  GRID_LENGTH = GRID_LENGTH,
+  CANVAS_HEIGHT = GRID_HEIGHT - 1,
+  CANVAS_LENGTH = GRID_LENGTH,
+  GRID_NAV_ROW = 8,
   LFO_NUM = 2,
   GRID_LEVELS = {DIM = 2, LOW_MED = 4, MED = 8, HIGH = 14 },
   INTERSECT_OP_NONE = NONE,
