@@ -36,7 +36,7 @@ function GRID.new(animator)
   for i=1,PATTERN_NUM do
     g.patterns[i] = pattern_time.new()
     g.patterns[i].process = function(e)
-      g:handleBottomRowSelect(e.x, e.y)
+      g.animator.handleSelectSnapshot(e.x)
     end
   end
 
@@ -114,6 +114,25 @@ function GRID:handleBottomRowSelect(x, y)
   local animator = self.animator
   local isClearHeld = self.held and self.held.y == NAV_ROW and self.held.x == CLEAR_POSITION
 
+  if x >= 1 and x <= SNAPSHOT_NUM then
+    animator.handleSelectSnapshot(x, isClearHeld)
+    self.snapshot = x
+
+    for i=1,PATTERN_NUM do
+      self.patterns[i]:watch{x=x}
+    end
+
+    animator.redraw()
+  elseif x >= 10 and x <= 13 then
+    self:handleSelectPattern(x-9, isClearHeld)
+  elseif x == CLEAR_POSITION then
+    self:setHeld(x, y)
+  elseif x == TOGGLE_VIEW_POSITION then
+    self:toggleView()
+  end
+end
+
+function GRID:handleSelectPattern(i, isClearHeld)
   local function stopOtherPattern(current, patterns)
     for i=1,PATTERN_NUM do
       local otherPat = patterns[i]
@@ -124,42 +143,32 @@ function GRID:handleBottomRowSelect(x, y)
     end
   end
 
-  if x >= 1 and x <= SNAPSHOT_NUM then
-    local e = {x=x, y=y}
-    animator.handleSelectSnapshot(x, isClearHeld)
-    self.snapshot = x
-
-    for i=1,PATTERN_NUM do
-      self.patterns[i]:watch(e)
-    end
-
-    animator.redraw()
-  elseif x >= 10 and x <= 13 then
-    local i = x - 9
-    local pattern = self.patterns[i]
+  local pattern = self.patterns[i]
+  if pattern.rec == 1 then
+    pattern:rec_stop()
+    pattern:stop()
+    if isClearHeld then pattern:clear() else pattern:start() end
+  elseif pattern.count == 0 then
+    stopOtherPattern(i, self.patterns)
+    pattern:rec_start()
+  elseif pattern.play == 1 then
     if isClearHeld then
-      pattern:rec_stop()
-      pattern:stop()
-      pattern:clear();
-    elseif pattern.rec == 1 then
-      pattern:rec_stop()
-      pattern:stop()
-      pattern:start();
-    elseif pattern.count == 0 then
-      stopOtherPattern(i, self.patterns)
+      pattern:clear()
       pattern:rec_start()
-    elseif pattern.play == 1 then
-      pattern:stop()
     else
-      stopOtherPattern(i, self.patterns)
+      pattern:stop()
+    end
+  else
+    stopOtherPattern(i, self.patterns)
+    if isClearHeld then
+      pattern:clear()
+      pattern:rec_start()
+    else
       pattern:start()
     end
-    animator.redraw()
-  elseif x == CLEAR_POSITION then
-    self:setHeld(x, y)
-  elseif x == TOGGLE_VIEW_POSITION then
-    self:toggleView()
   end
+
+  self.animator.redraw()
 end
 
 function GRID:toggleView()
@@ -251,6 +260,13 @@ function GRID:drawOptions(selected)
 end
 
 function GRID:redrawBottomRow()
+  drawSnapshots(self)
+  drawPatterns(self.patterns);
+  g:led(CLEAR_POSITION, NAV_ROW, GRID_LEVELS.DIM)
+  drawToggleViewPad()
+end
+
+function drawSnapshots(self)
   for i=1,SNAPSHOT_NUM do
     if self.snapshot == i then
       g:led(i, NAV_ROW, GRID_LEVELS.HIGH)
@@ -260,9 +276,6 @@ function GRID:redrawBottomRow()
       g:led(i, NAV_ROW, GRID_LEVELS.DIM)
     end
   end
-  drawPatterns(self.patterns);
-  g:led(CLEAR_POSITION, NAV_ROW, GRID_LEVELS.DIM)
-  drawToggleViewPad()
 end
 
 function drawSteps(levels)
