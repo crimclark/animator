@@ -42,6 +42,7 @@ animator.lastReplaced = 0
 animator.showIntroText = true
 animator.midiDevice = nil
 animator.name = 'untilted'
+animator.quantizeEvents = {}
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -93,6 +94,14 @@ function Snapshot.new(animator)
 end
 
 function animator.count()
+  if #animator.quantizeEvents > 0 then
+    for _,e in pairs(animator.quantizeEvents) do
+      if e.type ~= 'pattern' then animator.grid:eventRecord(e) end
+      animator.grid:eventExec(e)
+    end
+    animator.quantizeEvents = {}
+  end
+
   local play = {}
   local findPos = findPosition
   local noteOn = engine.noteOn

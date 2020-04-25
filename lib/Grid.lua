@@ -36,7 +36,7 @@ function GRID.new(animator)
   for i=1,PATTERN_NUM do
     g.patterns[i] = pattern_time.new()
     g.patterns[i].process = function(e)
-      g.animator.handleSelectSnapshot(e.x)
+      g:eventExec(e)
     end
   end
 
@@ -110,21 +110,45 @@ function GRID:optionsKeyDown(x, y)
   self.animator.redraw()
 end
 
+function GRID:eventExec(e)
+  if e.type == 'snapshot' then
+    self.snapshot = e.i
+    self.animator.handleSelectSnapshot(e.i, e.isClearHeld)
+    self.animator.redraw()
+  elseif e.type == 'pattern' then
+    self:handleSelectPattern(e.i, e.isClearHeld)
+  end
+end
+
+function GRID:eventRecord(e)
+  for i=1,PATTERN_NUM do
+    self.patterns[i]:watch(e)
+  end
+end
+
+function GRID:queueEvent(e)
+  self.animator.quantizeEvents[#self.animator.quantizeEvents+1] = e
+end
+
+function GRID:event(e)
+  -- todo: change implement quantize param
+  if true then
+    self:queueEvent(e)
+  else
+    if e.type ~= 'pattern' then self:eventRecord(e) end
+    self:eventExec(e)
+  end
+end
+
 function GRID:handleBottomRowSelect(x, y)
   local animator = self.animator
   local isClearHeld = self.held and self.held.y == NAV_ROW and self.held.x == CLEAR_POSITION
 
   if x >= 1 and x <= SNAPSHOT_NUM then
-    animator.handleSelectSnapshot(x, isClearHeld)
-    self.snapshot = x
-
-    for i=1,PATTERN_NUM do
-      self.patterns[i]:watch{x=x}
-    end
-
+    self:event{i=x, isClearHeld=isClearHeld, type='snapshot'}
     animator.redraw()
   elseif x >= 10 and x <= 13 then
-    self:handleSelectPattern(x-9, isClearHeld)
+    self:event{i=x-9, isClearHeld=isClearHeld, type='pattern'}
   elseif x == CLEAR_POSITION then
     self:setHeld(x, y)
   elseif x == TOGGLE_VIEW_POSITION then
