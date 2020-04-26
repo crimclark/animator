@@ -384,7 +384,8 @@ function animator.save(txt)
       sequencers = animator.sequencers,
       snapshots = animator.snapshots,
       selectedSnapshot = animator.grid.snapshot,
-      showIntroText = animator.showIntroText
+      showIntroText = animator.showIntroText,
+      patterns = animator.grid.patternManager.patterns
     }
     tab.save(doodle, path .. '.doodle')
     params:write(path .. '.pset')
@@ -424,6 +425,8 @@ function animator.load(path)
       end
 
       animator.grid.snapshot = doodle.selectedSnapshot
+
+      animator.grid.patternManager:rebuildPatterns(doodle.patterns)
     else
       print('you have no doodles')
     end

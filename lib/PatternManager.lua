@@ -25,6 +25,19 @@ function PatternManager.new(options)
   return controller
 end
 
+function PatternManager:rebuildPatterns(patterns)
+  for i=1,PATTERN_NUM do
+    if patterns[i].count > 0 then
+      self.patterns[i].count = patterns[i].count
+      self.patterns[i].event = patterns[i].event
+      self.patterns[i].time = patterns[i].time
+      self.patterns[i].prev_time = patterns[i].prev_time
+      self.patterns[i].prev_time = patterns[i].prev_time
+      self.patterns[i].step = patterns[i].step
+    end
+  end
+end
+
 function PatternManager:event(e)
   if params:get('quantize') == 2 then
     self:queueEvent(e)
