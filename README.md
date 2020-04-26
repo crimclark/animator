@@ -6,17 +6,19 @@
 
 ![](assets/main.png)
 
-Hold two pads in the main view (anywhere but the far right column) to draw a sequencer. Pads can be oriented vertically, horizontally, or diagonally, but must connect with a straight line.
+Hold two pads in the main view (anywhere but the far right column) to draw a sequence. Pads can be oriented vertically, horizontally, or diagonally, but must connect with a straight line.
 
-Whichever pad you pressed first will determine the direction of your sequencer. 
+Whichever pad you pressed first will determine the direction of your sequence. 
 
-Press any pad on your new sequencer to activate that note. 
+**You must press any pad on within your new sequence to turn that note on (or off).** 
 
-Hold the first and last pad of your sequencer to clear it (you can also clear it from the options view).
+Hold the first and last pad of your sequence to clear it. You can also clear it from the options view, by selecting that sequencer and pressing K3.
 
 There is a max of 8 sequencers. If you go over the max, they will be replaced in "first in first out" order  (so the 9th sequence will replace the first, 10th will replace the 2nd, etc).
 
-Press a snapshot pad to store the current state. If you press the same pad again, it will set all sequencers back to that state. To overwrite a snapshot, hold the "clear" pad and select the snapshot that you want to overwrite.   
+Press a snapshot pad to store the current state. If you press the same pad again, it will set all sequencers back to that state. To overwrite a snapshot, hold the "alt" pad and select the snapshot that you want to overwrite.   
+
+Press a pattern pad to record a snapshot pattern. Recording starts once you select a snapshot, and ends when you press the pattern pad again. Hold the "alt" pad and press a pattern to overwrite that pattern.
 
 ## options
 
