@@ -91,8 +91,6 @@ function Snapshot.new(animator)
 end
 
 function animator.count()
-  animator.grid.patternManager:processQuantizeEvents()
-
   local play = {}
   local findPos = findPosition
   local noteOn = engine.noteOn

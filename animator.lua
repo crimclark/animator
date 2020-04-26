@@ -45,6 +45,7 @@ function init()
   g.key = animator.grid:createKeyHandler()
   animator.noteOffMetro.event = animator.allNotesOff
   clock.run(pulse)
+  clock.run(function() animator.grid.patternManager:pulse() end)
   animator.redraw()
 end
 

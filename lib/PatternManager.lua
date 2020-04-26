@@ -91,6 +91,13 @@ function PatternManager:patternSelect(i, isClearHeld)
   end
 end
 
+function PatternManager:pulse()
+  while true do
+    clock.sync(1/4 * params:get('quant_div'))
+    self:processQuantizeEvents()
+  end
+end
+
 function stopOtherPattern(patterns)
   for i=1,PATTERN_NUM do
     local otherPat = patterns[i]
