@@ -42,7 +42,6 @@ animator.lastReplaced = 0
 animator.showIntroText = true
 animator.midiDevice = nil
 animator.name = 'untilted'
-animator.quantizeEvents = {}
 
 function updateEnabled(steps)
   for i=1,#steps do
@@ -94,13 +93,7 @@ function Snapshot.new(animator)
 end
 
 function animator.count()
-  if #animator.quantizeEvents > 0 then
-    for _,e in pairs(animator.quantizeEvents) do
-      if e.type ~= 'pattern' then animator.grid:eventRecord(e) end
-      animator.grid:eventExec(e)
-    end
-    animator.quantizeEvents = {}
-  end
+  animator.grid.patternManager:processQuantizeEvents()
 
   local play = {}
   local findPos = findPosition
@@ -321,12 +314,14 @@ function animator.setOnToNew(newOn)
   end
 end
 
-function animator.handleSelectSnapshot(i, isClearHeld)
-  if animator.snapshots[i] == nil or isClearHeld then
-    animator.snapshots[i] = Snapshot.new(animator)
+function animator.handleSelectSnapshot(e)
+  if animator.snapshots[e.i] == nil or e.isClearHeld then
+    animator.snapshots[e.i] = Snapshot.new(animator)
   end
 
-  setToSnapshot(animator.snapshots[i])
+  setToSnapshot(animator.snapshots[e.i])
+  animator.grid.snapshot = e.i
+  animator.redraw()
 end
 
 function setToSnapshot(snapshot)

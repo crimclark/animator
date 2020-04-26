@@ -1,19 +1,20 @@
-local pattern_time = require 'pattern_time'
 local constants = include('animator/lib/constants')
 local helpers = include('animator/lib/helpers')
+local PatternManager = include('animator/lib/PatternManager')
 local GRID_LENGTH = constants.GRID_LENGTH
 local GRID_HEIGHT = constants.GRID_HEIGHT
 local CANVAS_HEIGHT = constants.CANVAS_HEIGHT
 local NAV_ROW = constants.GRID_NAV_ROW
 local GRID_LEVELS = constants.GRID_LEVELS
 local SNAPSHOT_NUM = 8
-local PATTERN_NUM = 4
 local g = grid.connect()
 local CLEAR_POSITION = 15
 local TOGGLE_VIEW_POSITION = constants.CANVAS_LENGTH
 local DIV_START = GRID_LENGTH - 8
 local INTERSECT_START = 2
 local SELECT_POSITION = 1
+local EVENT_PATTERN = constants.EVENT_PATTERN
+local EVENT_SNAPSHOT = constants.EVENT_SNAPSHOT
 
 local GRID = {}
 GRID.__index = GRID
@@ -25,20 +26,18 @@ function GRID.new(animator)
     animator = animator,
     view = 1,
     selected = 1,
-    patterns = {},
+    patternManager = PatternManager.new{
+      callbacks = {
+        [EVENT_PATTERN] = animator.redraw,
+        [EVENT_SNAPSHOT] = animator.handleSelectSnapshot
+      }
+    }
   }
   setmetatable(g, GRID)
   setmetatable(g, {__index = GRID})
 
   g.viewKeyHandlers = {g.mainKeyHandler, g.optionsKeyHandler}
   g.viewRedraws = {g.redrawMain, g.redrawOptions}
-
-  for i=1,PATTERN_NUM do
-    g.patterns[i] = pattern_time.new()
-    g.patterns[i].process = function(e)
-      g:eventExec(e)
-    end
-  end
 
   return g
 end
@@ -110,89 +109,22 @@ function GRID:optionsKeyDown(x, y)
   self.animator.redraw()
 end
 
-function GRID:eventExec(e)
-  if e.type == 'snapshot' then
-    self.snapshot = e.i
-    self.animator.handleSelectSnapshot(e.i, e.isClearHeld)
-    self.animator.redraw()
-  elseif e.type == 'pattern' then
-    self:handleSelectPattern(e.i, e.isClearHeld)
-  end
-end
-
-function GRID:eventRecord(e)
-  for i=1,PATTERN_NUM do
-    self.patterns[i]:watch(e)
-  end
-end
-
-function GRID:queueEvent(e)
-  self.animator.quantizeEvents[#self.animator.quantizeEvents+1] = e
-end
-
 function GRID:event(e)
-  -- todo: change implement quantize param
-  if true then
-    self:queueEvent(e)
-  else
-    if e.type ~= 'pattern' then self:eventRecord(e) end
-    self:eventExec(e)
-  end
+  self.patternManager:event(e)
 end
 
 function GRID:handleBottomRowSelect(x, y)
-  local animator = self.animator
   local isClearHeld = self.held and self.held.y == NAV_ROW and self.held.x == CLEAR_POSITION
 
   if x >= 1 and x <= SNAPSHOT_NUM then
-    self:event{i=x, isClearHeld=isClearHeld, type='snapshot'}
-    animator.redraw()
+    self:event{i=x, isClearHeld=isClearHeld, type=EVENT_SNAPSHOT}
   elseif x >= 10 and x <= 13 then
-    self:event{i=x-9, isClearHeld=isClearHeld, type='pattern'}
+    self:event{i=x-9, isClearHeld=isClearHeld, type=EVENT_PATTERN}
   elseif x == CLEAR_POSITION then
     self:setHeld(x, y)
   elseif x == TOGGLE_VIEW_POSITION then
     self:toggleView()
   end
-end
-
-function GRID:handleSelectPattern(i, isClearHeld)
-  local function stopOtherPattern(current, patterns)
-    for i=1,PATTERN_NUM do
-      local otherPat = patterns[i]
-      if i ~= current and (otherPat.rec == 1 or otherPat.play == 1) then
-        otherPat:rec_stop()
-        otherPat:stop()
-      end
-    end
-  end
-
-  local pattern = self.patterns[i]
-  if pattern.rec == 1 then
-    pattern:rec_stop()
-    pattern:stop()
-    if isClearHeld then pattern:clear() else pattern:start() end
-  elseif pattern.count == 0 then
-    stopOtherPattern(i, self.patterns)
-    pattern:rec_start()
-  elseif pattern.play == 1 then
-    if isClearHeld then
-      pattern:clear()
-      pattern:rec_start()
-    else
-      pattern:stop()
-    end
-  else
-    stopOtherPattern(i, self.patterns)
-    if isClearHeld then
-      pattern:clear()
-      pattern:rec_start()
-    else
-      pattern:start()
-    end
-  end
-
-  self.animator.redraw()
 end
 
 function GRID:toggleView()
@@ -285,7 +217,7 @@ end
 
 function GRID:redrawBottomRow()
   drawSnapshots(self)
-  drawPatterns(self.patterns);
+  drawPatterns(self.patternManager.patterns);
   g:led(CLEAR_POSITION, NAV_ROW, GRID_LEVELS.DIM)
   drawToggleViewPad()
 end
@@ -311,7 +243,8 @@ function drawSteps(levels)
 end
 
 function drawPatterns(patterns)
-  for i=1,PATTERN_NUM do
+  local patternNum = #patterns
+  for i=1,patternNum do
     local x = i+9
     if patterns[i].rec == 1 then g:led(x, NAV_ROW, GRID_LEVELS.HIGH)
     elseif patterns[i].play == 1 then g:led(x, NAV_ROW, GRID_LEVELS.MED)

@@ -96,6 +96,8 @@ function parameters.init(animator)
   animator.clock:add_clock_params()
   params:set('bpm', 80)
 
+  params:add_option('quantize', 'quantize', {'off', 'on'}, 1)
+
   local noteLengthControlspec = controlspec.new(0.01, 1, 'lin', 0.01, 0.01, "")
   params:add_control('min_note_length', 'min note length', noteLengthControlspec)
   params:add_control('max_note_length', 'max note length', noteLengthControlspec)
