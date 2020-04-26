@@ -39,6 +39,9 @@ function getScaleNames()
 end
 
 function addSeqParams(animator)
+  local internal = 'internal'
+  params:add_group(internal, 16)
+  params:hide(internal)
   for i=1,8 do
     params:add_option('seq' .. i .. 'intersect', 'seq ' .. i .. ' intersect', INTERSECT_OPS, 1)
     params:set_action('seq' .. i .. 'intersect', function(v)
@@ -53,23 +56,18 @@ function addSeqParams(animator)
         animator.sequencers[i].div = v
       end
     end)
-
-    params:add_number('seq' .. i .. 'channel', 'seq ' .. i .. ' midi ch', 1, 16, 1)
-    params:set_action('seq' .. i .. 'channel', function(v)
-      if animator.sequencers[i] then
-        animator.sequencers[i].channel = v
-      end
-    end)
-    params:add_separator()
   end
 end
 
 function parameters.init(animator)
+  params:add_separator()
+  params:add_group('SAVE/LOAD', 2)
   params:add_trigger('save', 'save doodle')
   params:set_action('save', function(x) textentry.enter(animator.save, animator.name) end)
   params:add_trigger('load', 'load doodle')
   params:set_action('load', function() fileselect.enter(norns.state.data, animator.load) end)
-  params:add_separator()
+
+  params:add_group('SETTINGS', 6)
   params:add_option('output', 'output', constants.OUTPUTS, 1)
   params:set_action('output', function(v)
     local output = constants.OUTPUTS[v]
@@ -89,31 +87,6 @@ function parameters.init(animator)
       crow.output[4].action = triggerASL
     end
   end)
-
-  params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
-  params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
-
-  animator.clock:add_clock_params()
-  params:set('bpm', 80)
-
-  params:add_option('quantize', 'quantize', {'off', 'on'}, 1)
-
-  local noteLengthControlspec = controlspec.new(0.01, 1, 'lin', 0.01, 0.01, "")
-  params:add_control('min_note_length', 'min note length', noteLengthControlspec)
-  params:add_control('max_note_length', 'max note length', noteLengthControlspec)
-  params:set_action('min_note_length', function(v)
-    if v > params:get('max_note_length') then
-      params:set('max_note_length', v)
-    end
-  end)
-
-  params:add_number('max_velocity', 'max velocity', 1, 127, 127)
-  params:add_number('min_velocity', 'min velocity', 1, 127, 1)
-  params:set_action('min_velocity', function(v)
-    if v > params:get('max_velocity') then
-      params:set('max_velocity', v)
-    end
-  end)
   params:add_option('scale', 'scale', getScaleNames(), 1)
   params:set_action('scale', function(scale)
     animator.notes = mapGridNotes(scale, params:get('global_transpose'))
@@ -122,9 +95,41 @@ function parameters.init(animator)
   params:set_action('global_transpose', function(v)
     animator.notes = mapGridNotes(params:get('scale'), v)
   end)
+  params:add_option('quantize', 'pattern quantize', {'off', 'on'}, 1)
   params:add_number('slop', 'slop', 0, 500, 0)
   params:add_number('max_notes', 'max notes', 1, 10, 6)
 
+  animator.clock:add_clock_params()
+  params:set('bpm', 80)
+
+  params:add_group('MIDI', 13)
+  params:add_number('midi_out_device', 'midi out device', 1, 4, 1)
+  params:set_action('midi_out_device', function(v) animator.midiOut = midi.connect(v) end)
+  local noteLengthControlspec = controlspec.new(0.01, 1, 'lin', 0.01, 0.01, "")
+  params:add_control('min_note_length', 'min note length', noteLengthControlspec)
+  params:add_control('max_note_length', 'max note length', noteLengthControlspec)
+  params:set_action('min_note_length', function(v)
+    if v > params:get('max_note_length') then
+      params:set('max_note_length', v)
+    end
+  end)
+  params:add_number('max_velocity', 'max velocity', 1, 127, 127)
+  params:add_number('min_velocity', 'min velocity', 1, 127, 1)
+  params:set_action('min_velocity', function(v)
+    if v > params:get('max_velocity') then
+      params:set('max_velocity', v)
+    end
+  end)
+  for i=1,8 do
+    params:add_number('seq' .. i .. 'channel', 'seq ' .. i .. ' midi ch', 1, 16, 1)
+    params:set_action('seq' .. i .. 'channel', function(v)
+      if animator.sequencers[i] then
+        animator.sequencers[i].channel = v
+      end
+    end)
+  end
+
+  params:add_group('LFO', 14)
   lfo.init(animator)
 
   local hasMoveTarget = {[2] = true, [3] = true}
@@ -146,7 +151,7 @@ function parameters.init(animator)
     )
   end
 
-  params:add_separator()
+  params:add_group('SYNTH', 47)
 
   MollyThePoly.add_params()
   params:set('env_2_decay', 0.2)

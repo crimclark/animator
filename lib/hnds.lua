@@ -77,7 +77,6 @@ end
 
 function lfo.init()
   for i = 1, number_of_outputs do
-    params:add_separator()
     -- modulation destination
     params:add_option(i .. "lfo_target", i .. " lfo target", lfo[i].lfo_targets, 1)
     -- lfo shape
@@ -94,6 +93,7 @@ function lfo.init()
     params:set_action(i .. "lfo_freq", function(value) lfo[i].freq = value end)
     -- lfo on/off
     params:add_option(i .. "lfo", i .. " lfo", {"off", "on"}, 1)
+    params:add_separator()
   end
 
   local lfo_metro = metro.init()
