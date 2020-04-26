@@ -60,7 +60,7 @@ function addSeqParams(animator)
 end
 
 function parameters.init(animator)
-  params:add_separator()
+  params:add_separator('ANIMATOR')
   params:add_group('SAVE/LOAD', 2)
   params:add_trigger('save', 'save doodle')
   params:set_action('save', function(x) textentry.enter(animator.save, animator.name) end)
@@ -98,9 +98,6 @@ function parameters.init(animator)
   params:add_option('quantize', 'pattern quantize', {'off', 'on'}, 1)
   params:add_number('slop', 'slop', 0, 500, 0)
   params:add_number('max_notes', 'max notes', 1, 10, 6)
-
-  animator.clock:add_clock_params()
-  params:set('bpm', 80)
 
   params:add_group('MIDI', 13)
   params:add_number('midi_out_device', 'midi out device', 1, 4, 1)

@@ -28,6 +28,13 @@ local GRID = include('lib/Grid')
 local g = grid.connect()
 engine.name = 'MollyThePoly'
 
+function pulse()
+  while true do
+    clock.sync(1/4)
+    animator.count()
+  end
+end
+
 function init()
   crow.ii.pullup(true)
   crow.ii.jf.mode(1)
@@ -35,23 +42,9 @@ function init()
   parameters.init(animator)
   animator.grid = GRID.new(animator)
   animator.midiDevice = midi.connect(1)
-  animator.midiDevice.event = function(data)
-    animator.clock:process_midi(data)
-  end
   g.key = animator.grid:createKeyHandler()
-  animator.clock.on_step = animator.count
-  animator.clock.on_select_internal = function()
-    animator.clock:start()
-    crow.input[2].mode('none')
-    animator.clock:reset()
-  end
-  animator.clock.on_select_external = function() crow.input[1].mode('none') end
-  animator.clock.on_select_crow = function()
-    crow.input[2].mode('change', 1, 0.5, 'rising')
-    crow.input[2].change = animator.count
-  end
   animator.noteOffMetro.event = animator.allNotesOff
-  animator.clock:start()
+  clock.run(pulse)
   animator.redraw()
 end
 
