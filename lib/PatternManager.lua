@@ -32,7 +32,6 @@ function PatternManager:rebuildPatterns(patterns)
       self.patterns[i].event = patterns[i].event
       self.patterns[i].time = patterns[i].time
       self.patterns[i].prev_time = patterns[i].prev_time
-      self.patterns[i].prev_time = patterns[i].prev_time
       self.patterns[i].step = patterns[i].step
     end
   end

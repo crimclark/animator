@@ -11,18 +11,17 @@ function createStepMap(steps)
   return map
 end
 
-function Sequencer.new(options)
+function Sequencer.new(options, position)
   local seq = {
-    ID = options.ID or os.time(),
     steps = options.steps,
     stepMap = createStepMap(options.steps),
-    index = options.index or 1,
+    index = options.index or 1, -- current step index
     length = #options.steps,
-    intersect = params:get('seq' .. options.index .. 'intersect'),
-    div = params:get('seq' .. options.index .. 'div'),
+    intersect = params:get('seq' .. position .. 'intersect'),
+    div = params:get('seq' .. position .. 'div'),
     divCount = options.divCount or 1,
     reset = options.reset or false,
-    channel = params:get('seq' .. options.index .. 'channel'),
+    channel = params:get('seq' .. position .. 'channel'),
   }
 
   setmetatable(seq, Sequencer)

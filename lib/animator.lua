@@ -64,11 +64,12 @@ function animator.addNewSequence(steps)
   if #animator.sequencers == MAX_SEQ_NUM then
     animator.lastReplaced = animator.lastReplaced % MAX_SEQ_NUM + 1
     index = animator.lastReplaced
+    resetSeqParams(index)
   else
     index = #animator.sequencers+1
   end
   if animator.showIntroText then animator.showIntroText = false end
-  animator.sequencers[index] = Sequencer.new{steps = steps, index = index}
+  animator.sequencers[index] = Sequencer.new({steps = steps}, index)
   updateEnabled(steps)
   updateOnState(steps)
 end
@@ -332,10 +333,14 @@ function setToSnapshot(snapshot)
 end
 
 function animator.clearSeq(index)
-  clearStepState(animator.sequencers[index].steps)
-  clearOnState(animator.sequencers[index].steps)
-  table.remove(animator.sequencers, index)
-  animator.redraw()
+  if animator.sequencers[index] ~= nil then
+    clearStepState(animator.sequencers[index].steps)
+    clearOnState(animator.sequencers[index].steps)
+    local lastIndex = #animator.sequencers
+    table.remove(animator.sequencers, index)
+    resetSeqParams(lastIndex)
+    animator.redraw()
+  end
 end
 
 function resetSeqParams(index)
@@ -345,8 +350,14 @@ end
 
 function animator.clear(view)
   if view == 1 then
+    for i=1,#animator.sequencers do
+      resetSeqParams(i)
+    end
     animator.sequencers = {}
-    animator.snapshots = {}
+    if animator.grid.snapshot > 0 then
+      animator.snapshots[animator.grid.snapshot] = nil
+      animator.grid.snapshot = 0
+    end
     animator.original = {}
     animator.on = initStepState()
     animator.enabled = initStepState()
