@@ -12,7 +12,7 @@ local CROW_II_JF = 'crow ii jf'
 local CROW_CV = 'crow cv'
 local CROW_CV_JF = 'crow cv + JF'
 local AUDIO_CV_JF = 'audio + cv + JF'
-local SC = 'ER-301'
+local CROW_II_SC = 'ER-301'
 local GRID_LENGTH = 16
 local GRID_HEIGHT = 8
 

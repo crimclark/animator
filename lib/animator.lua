@@ -108,6 +108,7 @@ function animator.count()
   local metroFree = metro.free
   local output = OUTPUTS[params:get('output')]
   local jfPlayNote = crow.ii.jf.play_note
+  local er_port = params:get('ER_port')
 
   local useMidiCheck = {[MIDI] = true, [AUDIO_MIDI] = true}
   local useMidi = useMidiCheck[output]
@@ -127,7 +128,7 @@ function animator.count()
   local currentCrowOut = 1
   local crowCVPlayed = 0
 
-  local currentSCOut = 1
+  local currentSCOut = 0 + er_port
   local scCVPlayed = 0
 
   local function playNote(note, channel)
@@ -142,11 +143,11 @@ function animator.count()
       crowCVPlayed = crowCVPlayed + 1
     end
 
-    -- ER 301 additions
+    -- ER 301 support
     if useSC and scCVPlayed < 8 then
       crow.ii.er301.cv(currentSCOut ,(note-60)/12)
       crow.ii.er301.tr_pulse(currentSCOut)
-      currentSCOut = (currentSCOut + 1) % 8
+      currentSCOut = ((currentSCOut + 1) % 8)
       scCVPlayed = scCVPlayed + 1
     end
     --
