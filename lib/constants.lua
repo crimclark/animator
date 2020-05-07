@@ -12,6 +12,7 @@ local CROW_II_JF = 'crow ii jf'
 local CROW_CV = 'crow cv'
 local CROW_CV_JF = 'crow cv + JF'
 local AUDIO_CV_JF = 'audio + cv + JF'
+local SC = 'ER-301'
 local GRID_LENGTH = 16
 local GRID_HEIGHT = 8
 
@@ -37,7 +38,8 @@ local constants = {
   OUTPUT_CROW_CV = CROW_CV,
   OUTPUT_CROW_CV_JF = CROW_CV_JF,
   OUTPUT_AUDIO_CV_JF = AUDIO_CV_JF,
-  OUTPUTS = {AUDIO, MIDI, AUDIO_MIDI, CROW_II_JF, CROW_CV, CROW_CV_JF, AUDIO_CV_JF},
+  OUTPUT_CROW_II_SC = CROW_II_SC,
+  OUTPUTS = {AUDIO, MIDI, AUDIO_MIDI, CROW_II_JF, CROW_CV, CROW_CV_JF, AUDIO_CV_JF, CROW_II_SC},
   EVENT_PATTERN = 'pattern',
   EVENT_SNAPSHOT = 'snapshot'
 }

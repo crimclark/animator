@@ -8,6 +8,7 @@ local AUDIO = constants.OUTPUT_AUDIO
 local MIDI = constants.OUTPUT_MIDI
 local AUDIO_MIDI = constants.OUTPUT_AUDIO_MIDI
 local CROW_II_JF = constants.OUTPUT_CROW_II_JF
+local CROW_II_SC = constants.OUTPUT_CROW_II_SC
 local CROW_CV = constants.OUTPUT_CROW_CV
 local CROW_CV_JF = constants.OUTPUT_CROW_CV_JF
 local AUDIO_CV_JF = constants.OUTPUT_AUDIO_CV_JF
@@ -117,11 +118,17 @@ function animator.count()
   local useJFCheck = {[CROW_II_JF] = true, [CROW_CV_JF] = true, [AUDIO_CV_JF] = true}
   local useJF = useJFCheck[output]
 
+  local useSCCheck = {[CROW_II_SC] = true}
+  local useSC = useSCCheck[output]
+
   local useCVCheck = {[CROW_CV] = true, [CROW_CV_JF] = true, [AUDIO_CV_JF] = true}
   local useCV = useCVCheck[output]
 
   local currentCrowOut = 1
   local crowCVPlayed = 0
+
+  local currentSCOut = 1
+  local scCVPlayed = 0
 
   local function playNote(note, channel)
     if useJF then
@@ -134,6 +141,15 @@ function animator.count()
       currentCrowOut = (currentCrowOut + 2) % 4
       crowCVPlayed = crowCVPlayed + 1
     end
+
+    -- ER 301 additions
+    if useSC and scCVPlayed < 8 then
+      crow.ii.er301.cv(currentSCOut ,(note-60)/12)
+      crow.ii.er301.tr_pulse(currentSCOut)
+      currentSCOut = (currentSCOut + 1) % 8
+      scCVPlayed = scCVPlayed + 1
+    end
+    --
 
     if useAudio or useMidi then
       local velocity = random(minVel, maxVel)
