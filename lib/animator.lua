@@ -9,7 +9,6 @@ local MIDI = constants.OUTPUT_MIDI
 local AUDIO_MIDI = constants.OUTPUT_AUDIO_MIDI
 local CROW_II_JF = constants.OUTPUT_CROW_II_JF
 local CROW_II_SC = constants.OUTPUT_CROW_II_SC
-local CROW_II_TXO = constants.OUTPUT_CROW_II_TXO
 local CROW_CV = constants.OUTPUT_CROW_CV
 local CROW_CV_JF = constants.OUTPUT_CROW_CV_JF
 local AUDIO_CV_JF = constants.OUTPUT_AUDIO_CV_JF
@@ -124,9 +123,6 @@ function animator.count()
   local useSCCheck = {[CROW_II_SC] = true}
   local useSC = useSCCheck[output]
 
-  local useTXoCheck = {[CROW_II_TXO] = true}
-  local useTXo = useTXoCheck[output]
-
   local useCVCheck = {[CROW_CV] = true, [CROW_CV_JF] = true, [AUDIO_CV_JF] = true}
   local useCV = useCVCheck[output]
 
@@ -135,9 +131,6 @@ function animator.count()
 
   local currentSCOut = -1 + er_port
   local scCVPlayed = 0
-
-  local currentTXoOut = 0
-  local txoCVPlayed = 0
 
   local function playNote(note, channel)
     if useJF then
@@ -157,14 +150,6 @@ function animator.count()
       crow.ii.er301.tr_pulse(currentSCOut + 1)
       currentSCOut = ((currentSCOut + 1) % 8)
       scCVPlayed = scCVPlayed + 1
-    end
-    --
-    -- TXo support
-    if useTXo and txoCVPlayed <= 8 then
-      crow.ii.txo.cv(currentTXoOut + 1,(note-60)/12)
-      crow.ii.txo.tr_pulse(currentTXoOut + 1)
-      currentTXoOut = ((currentTXoOut + 1) % 4)
-      txoCVPlayed = txoCVPlayed + 1
     end
     --
 
