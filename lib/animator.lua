@@ -100,6 +100,7 @@ function animator.count()
   local noteOff = engine.noteOff
   local numToFreq = MusicUtil.note_num_to_freq
   local random = math.random
+  local floor = math.floor
   local slop = params:get('slop')
   local minVel = params:get('min_velocity')
   local maxVel = params:get('max_velocity')
@@ -181,7 +182,7 @@ function animator.count()
         if useAudio then noteOff(note) end
         metroFree(noteOffMetro.id)
       end
-      noteOffMetro.time = random(minLn*100, maxLn*100)/100
+      noteOffMetro.time = random(floor(minLn*100), floor(maxLn*100))/100
       noteOffMetro.count = 1
       noteOffMetro:start()
     end
