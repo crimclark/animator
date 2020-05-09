@@ -129,7 +129,7 @@ function animator.count()
   local currentCrowOut = 1
   local crowCVPlayed = 0
 
-  local currentSCOut = -1 + er_port
+  local currentSCOut = 0
   local scCVPlayed = 0
 
   local function playNote(note, channel)
@@ -146,9 +146,9 @@ function animator.count()
 
     -- ER 301 support
     if useSC and scCVPlayed <= 8 then
-      crow.ii.er301.cv(currentSCOut + 1,(note-60)/12)
-      crow.ii.er301.tr_pulse(currentSCOut + 1)
-      currentSCOut = ((currentSCOut + 1) % 8)
+      crow.ii.er301.cv(currentSCOut + er_port,(note-60)/12)
+      crow.ii.er301.tr_pulse(currentSCOut + er_port)
+      currentSCOut = (currentSCOut + 1) % 8
       scCVPlayed = scCVPlayed + 1
     end
     --
