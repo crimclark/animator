@@ -67,7 +67,7 @@ function parameters.init(animator)
   params:add_trigger('load', 'load doodle')
   params:set_action('load', function() fileselect.enter(norns.state.data, animator.load) end)
 
-  params:add_group('SETTINGS', 7)
+  params:add_group('SETTINGS', 8)
   params:add_option('output', 'output', constants.OUTPUTS, 1)
   params:set_action('output', function(v)
     local output = constants.OUTPUTS[v]
@@ -87,6 +87,8 @@ function parameters.init(animator)
       crow.output[4].action = triggerASL
     end
   end)
+  params:add_number('ER_port', 'ER-301 port', 1, 90, 1) -- sets 301 port bias
+
   params:add_option('scale', 'scale', getScaleNames(), 1)
   params:set_action('scale', function(scale)
     animator.notes = mapGridNotes(scale, params:get('global_transpose'))
