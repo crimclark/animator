@@ -71,7 +71,7 @@ function parameters.init(animator)
   params:add_option('output', 'output', constants.OUTPUTS, 1)
   params:set_action('output', function(v)
     local output = constants.OUTPUTS[v]
-    local triggerASL = '{to(5,0),to(0,0.25)}'
+    local triggerASL = 'pulse()'
 
     if output == constants.OUTPUT_AUDIO or output == constants.OUTPUT_AUDIO_MIDI or output == constants.OUTPUT_MIDI then
       crow.ii.jf.mode(0)
